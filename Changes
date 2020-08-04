@@ -1,11 +1,15 @@
-Revision history for Mojo-DOM-Role-Analyzer
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+- prune out unneeded module
 
 0.006     2020-08-04 18:43:29-04:00 America/New_York
 
-0.005     2020-08-04 17:52:45-04:00 America/New_York
-
 - add comparison test
 - doc tweaks
+
+0.005     2020-08-04 17:52:45-04:00 America/New_York
 
 - Misc. doc improvements
 
