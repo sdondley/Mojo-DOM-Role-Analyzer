@@ -14,7 +14,7 @@ use warnings;
 
 
 
-my $tests = 7; # keep on line 17 for ,i (increment and ,d (decrement)
+my $tests = 8; # keep on line 17 for ,i (increment and ,d (decrement)
 plan tests => $tests;
 diag( "Running my tests" );
 
@@ -37,6 +37,9 @@ is $result, -1, 'can compare tags';
 $result = $tag1 cmp $tag2;
 is $result, -1, 'can compare tags';
 
+$result = $tag2 cmp $tag1;
+is $result, 1, 'can compare tags';
+
 is $ex->at('p.first')->compare('p.last'), -1, 'can compare with method operator';
 
 my $depth = $ex->at('p.first')->depth;
@@ -44,3 +47,5 @@ is $depth, 3, 'gets depth';
 
 my $deepest = $ex->deepest;
 is $deepest, 5, 'gets deepest depth';
+
+
