@@ -3,6 +3,7 @@ Revision history for {{$dist->name}}
 {{$NEXT}}
 
 - prune out unneeded module
+- first release to metacpan
 
 0.006     2020-08-04 18:43:29-04:00 America/New_York
 
