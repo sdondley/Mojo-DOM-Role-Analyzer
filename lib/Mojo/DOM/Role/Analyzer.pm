@@ -118,13 +118,23 @@ Provides methods for analyzing a DOM.
 
 =head1 DESCRIPTION
 
+=head3 Operators
+
+=head3 cmp
+
+  my $result = $dom1 cmp $dom2;
+
+Compares the selectors of two $dom objects to determine which comes first in
+the dom. See C<compare> method below for return values. 
+
 =head2 Methods
 
 =head3 element_count
 
   $count = $dom->element_count;
 
-Returns the number of elements in a dom object, including children of children of children, etc.
+Returns the number of elements in a dom object, including children of children
+of children, etc.
 
 
 =head3 parent_all
@@ -161,9 +171,15 @@ C<'p'> tag argument for you.
 
 Compares the selectors of two $dom objects to see which comes first in the DOM.
 
-Returns -1 if the first argument comes before (is less than) the second.
-Returns 0 if the first and second arguments are the same.
-Returns 1 if the first argument comes after (is greater than) the second.
+=over 1
+
+=item Returns a value of '-1' if the first argument comes before (is less than) the second.
+
+=item Returns a value of '0' if the first and second arguments are the same.
+
+=item Returns a value of '1' if the first argument comes after (is greater than) the second.
+
+=back
 
 
 =head3 depth
