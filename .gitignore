@@ -1,0 +1,9 @@
+/MANIFEST.SKIP
+/Mojo-DOM-Role-Analyzer-*
+/tmp
+!*/tmp
+*~
+*.swp
+*.swo
+*.tgz
+.build
