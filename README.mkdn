@@ -36,12 +36,12 @@ Mojo::DOM::Role::Analyzer - miscellaneous methods for analyzing a DOM
 
     $count = $dom->element_count;
 
-Returns the number of elements in a dom oject, including children of children of children, etc.
+Returns the number of elements in a dom object, including children of children of children, etc.
 
 ## parent\_all
 
-    $dom = $dom->parent_all('a');                    # finds parent with root
-    $dom = $dom->at('div.article')->parent_all('a'); # finds parent within C<div.article>
+    $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
+    $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
 
 Returns the smallest containing $dom within the $dom the method is called on
 that wraps all the tags indicated in the argument.
@@ -80,7 +80,7 @@ Finds the deeepest nested level within a node.
 
 # VERSION
 
-version 0.002
+version 0.003
 
 # SUPPORT
 
