@@ -113,13 +113,13 @@ Provides methods for analyzing a DOM.
 
   $count = $dom->element_count;
 
-Returns the number of elements in a dom oject, including children of children of children, etc.
+Returns the number of elements in a dom object, including children of children of children, etc.
 
 
 =head2 parent_all
 
-  $dom = $dom->parent_all('a');                    # finds parent with root
-  $dom = $dom->at('div.article')->parent_all('a'); # finds parent within C<div.article>
+  $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
+  $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
 
 Returns the smallest containing $dom within the $dom the method is called on
 that wraps all the tags indicated in the argument.
@@ -152,7 +152,7 @@ Returns 1 if the first argument comes after (is greater than) the second.
   my $depth = $dom->at('p.first')->depth;
 
 Finds the nested depth level of a node. The root node returns 1.
-  
+
 =head2 deepest
 
   my $deepest_depth = $dom->deepest;
