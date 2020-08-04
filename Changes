@@ -1,5 +1,5 @@
-Revision history for {{$dist->name}}
+Revision history for Mojo-DOM-Role-Analyzer
 
-{{$NEXT}}
+0.001     2020-08-04 13:39:37-04:00 America/New_York
 
 - initial commit

@@ -1,1 +1,77 @@
-Initial commit
+# NAME
+
+Mojo::DOM::Role::Analyzer - miscellaneous methods for analyzing a DOM
+
+# SYNOPSIS
+
+    use strict;
+    use warnings;
+    use feature 'say';
+    use Mojo::Dom;
+
+    my $html = '<html><head></head><body><p class="first">A paragraph.</p><p class="last">boo<a>blah<span>kdj</span></a></p><h1>hi</h1></body></html>';
+    my $analyzer = Mojo::DOM->with_roles('+Analyzer')->new($html);
+
+    # return the count of elements inside a dom objec
+    my $count = $analyzer->at('body')->element_count;
+
+    # get the smallest containing dom object that contains all the paragraph tags
+    my $containing_dom = $analyzer->parent_ptags;
+
+    # compare DOM objects to see which comes first in the document
+    my $tag1 = $analyzer->at('p.first');
+    my $tag2 = $analyzer->at('p.last');
+    say $analyzer->compare_tags($tag1, $tag2);
+
+    # get the depth level of a dom object relative to root
+    # root node returns '1'
+    my $depth = $analyzer->at('p.first')->depth;
+
+    # get the deepest depth of the documented
+    my $deepest = $analyzer->deepest;
+
+# DESCRIPTION
+
+# VERSION
+
+version 0.001
+
+# SUPPORT
+
+## Perldoc
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Mojo::DOM::Role::Analyzer
+
+## Websites
+
+The following websites have more information about this module, and may be of help to you. As always,
+in addition to those websites please use your favorite search engine to discover more resources.
+
+- MetaCPAN
+
+    A modern, open-source CPAN search engine, useful to view POD in HTML format.
+
+    [https://metacpan.org/release/Mojo-DOM-Role-Analyzer](https://metacpan.org/release/Mojo-DOM-Role-Analyzer)
+
+## Source Code
+
+The code is open to the world, and available for you to hack on. Please feel free to browse it and play
+with it, or whatever. If you want to contribute patches, please send me a diff or prod me to pull
+from your repository :)
+
+[https://github.com/sdondley/Mojo-DOM-Role-Analyzer](https://github.com/sdondley/Mojo-DOM-Role-Analyzer)
+
+    git clone git://github.com/sdondley/Mojo-DOM-Role-Analyzer.git
+
+# AUTHOR
+
+Steve Dondley <s@dondley.com>
+
+# COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2020 by Steve Dondley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
