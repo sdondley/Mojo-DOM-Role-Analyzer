@@ -1,4 +1,8 @@
-Revision history for Mojo-DOM-Role-Analyzer
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+- create comparison operator and make comparison method more flexible
 
 0.003     2020-08-04 14:05:26-04:00 America/New_York
 
