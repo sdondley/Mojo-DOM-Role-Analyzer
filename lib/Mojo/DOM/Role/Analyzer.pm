@@ -92,7 +92,6 @@ Provides methods for analyzing a DOM.
 
   use strict;
   use warnings;
-  use feature 'say';
   use Mojo::Dom;
 
   my $html = '<html><head></head><body><p class="first">A paragraph.</p><p class="last">boo<a>blah<span>kdj</span></a></p><h1>hi</h1></body></html>';
@@ -107,7 +106,11 @@ Provides methods for analyzing a DOM.
   # compare DOM objects to see which comes first in the document
   my $tag1 = $analyzer->at('p.first');
   my $tag2 = $analyzer->at('p.last');
-  say $analyzer->compare($tag1, $tag2);
+  my $result = $analyzer->compare($tag1, $tag2);
+
+  # ALTERNATIVELY
+
+  $analyzer->at('p.first')->compare('p.last');    # 'p.last' is relative to root
 
   # get the depth level of a dom object relative to root
   # root node returns '1'
@@ -125,7 +128,7 @@ Provides methods for analyzing a DOM.
   my $result = $dom1 cmp $dom2;
 
 Compares the selectors of two $dom objects to determine which comes first in
-the dom. See C<compare> method below for return values. 
+the dom. See C<compare> method below for return values.
 
 =head2 Methods
 
@@ -159,7 +162,7 @@ C<'p'> tag argument for you.
 
   my $dom1 = $dom->at('p.first');
   my $dom2 = $dom->at('p.last');
-  my $resutl = $dom->compare($dom1, $dom2);
+  my $result = $dom->compare($dom1, $dom2);
 
   # OR with overloaded 'cmp' operator
 
