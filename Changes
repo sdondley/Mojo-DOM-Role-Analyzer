@@ -1,4 +1,8 @@
-Revision history for Mojo-DOM-Role-Analyzer
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+- fix doc configuration
 
 0.001     2020-08-04 13:39:37-04:00 America/New_York
 

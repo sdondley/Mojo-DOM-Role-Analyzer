@@ -109,14 +109,14 @@ Provides methods for analyzing a DOM.
 
 =head1 DESCRIPTION
 
-=h2 element_count
+=head2 element_count
 
   $count = $dom->element_count;
 
 Returns the number of elements in a dom oject, including children of children of children, etc.
 
 
-=h2 parent_all
+=head2 parent_all
 
   $dom = $dom->parent_all('a');                    # finds parent with root
   $dom = $dom->at('div.article')->parent_all('a'); # finds parent within C<div.article>
@@ -125,7 +125,7 @@ Returns the smallest containing $dom within the $dom the method is called on
 that wraps all the tags indicated in the argument.
 
 
-=h2 parent_ptags
+=head2 parent_ptags
 
   $dom = $dom->parent_ptags;
   $dom = $dom->at('div.article')->parent_ptags;
@@ -134,7 +134,7 @@ A conveniece method that works like the C<parent_all> method but automatically s
 C<'p'> tag argument for you.
 
 
-=h2 compare_tags($dom1, $dom2)
+=head2 compare_tags($dom1, $dom2)
 
   my $dom1 = $dom->at('p.first');
   my $dom2 = $dom->at('p.last');
@@ -147,13 +147,13 @@ Returns 0 if the first and second arguments are the same.
 Returns 1 if the first argument comes after (is greater than) the second.
 
 
-=h2 depth
+=head2 depth
 
   my $depth = $dom->at('p.first')->depth;
 
 Finds the nested depth level of a node. The root node returns 1.
   
-=h2 deepest
+=head2 deepest
 
   my $deepest_depth = $dom->deepest;
 
