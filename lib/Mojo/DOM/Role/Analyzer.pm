@@ -2,7 +2,6 @@ package Mojo::DOM::Role::Analyzer ;
 
 use strict;
 use warnings;
-use Log::Log4perl::Shortcuts qw(:all);
 use Role::Tiny;
 use Devel::Confess;
 use Carp;
