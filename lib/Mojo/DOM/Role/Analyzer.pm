@@ -4,7 +4,10 @@ use strict;
 use warnings;
 use Log::Log4perl::Shortcuts qw(:all);
 use Role::Tiny;
+use Devel::Confess;
 use Carp;
+
+use overload "cmp" => sub { $_[0]->compare(@_) }, fallback => 1;
 
 sub element_count {
   my $self = shift;
@@ -33,13 +36,19 @@ sub parent_ptags {
 }
 
 # determine if a tag A comes before or after tag B in the dom
-sub compare_tags {
-  my $s = shift;
-  my $tag1 = shift;
-  my $tag2 = shift;
+sub compare {
+  my ($sel1, $sel2);
+  if (!$_[2]) {
+    my $s = shift;
+    $sel1 = $s->selector;
+    $sel2 = $s->root->at($_[0])->selector;
+  } else {
+    $sel1 = $_[1]->selector;
+    $sel2 = $_[2]->selector;
+  }
 
-  my @t1_path = split / > /, $tag1->selector;
-  my @t2_path = split / > /, $tag2->selector;
+  my @t1_path = split / > /, $sel1;
+  my @t2_path = split / > /, $sel2;
 
   foreach my $p1 (@t1_path) {
     my $p2 = shift(@t2_path);
@@ -48,7 +57,7 @@ sub compare_tags {
     my ($p2_tag, $p2_num) = split /:/, $p2;
 
     next if $p1_num eq $p2_num;
-    return ($p1_num cmp $p2_num);
+    return $p1_num cmp $p2_num;
   }
 }
 
@@ -98,7 +107,7 @@ Provides methods for analyzing a DOM.
   # compare DOM objects to see which comes first in the document
   my $tag1 = $analyzer->at('p.first');
   my $tag2 = $analyzer->at('p.last');
-  say $analyzer->compare_tags($tag1, $tag2);
+  say $analyzer->compare($tag1, $tag2);
 
   # get the depth level of a dom object relative to root
   # root node returns '1'
@@ -109,14 +118,16 @@ Provides methods for analyzing a DOM.
 
 =head1 DESCRIPTION
 
-=head2 element_count
+=head2 Methods
+
+=head3 element_count
 
   $count = $dom->element_count;
 
 Returns the number of elements in a dom object, including children of children of children, etc.
 
 
-=head2 parent_all
+=head3 parent_all
 
   $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
   $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
@@ -125,7 +136,7 @@ Returns the smallest containing $dom within the $dom the method is called on
 that wraps all the tags indicated in the argument.
 
 
-=head2 parent_ptags
+=head3 parent_ptags
 
   $dom = $dom->parent_ptags;
   $dom = $dom->at('div.article')->parent_ptags;
@@ -134,11 +145,19 @@ A conveniece method that works like the C<parent_all> method but automatically s
 C<'p'> tag argument for you.
 
 
-=head2 compare_tags($dom1, $dom2)
+=head3 compare($dom1, $dom2)
 
   my $dom1 = $dom->at('p.first');
   my $dom2 = $dom->at('p.last');
-  $dom->compare_tags($dom1, $dom2); # returns -1
+  my $resutl = $dom->compare($dom1, $dom2);
+
+  # OR with overloaded 'cmp' operator
+
+  my $result = $dom1 cmp $dom2;
+
+  # OR
+
+  $dom->at('p.first')->compare('p.last');    # 'p.last' is relative to root
 
 Compares the selectors of two $dom objects to see which comes first in the DOM.
 
@@ -147,13 +166,13 @@ Returns 0 if the first and second arguments are the same.
 Returns 1 if the first argument comes after (is greater than) the second.
 
 
-=head2 depth
+=head3 depth
 
   my $depth = $dom->at('p.first')->depth;
 
 Finds the nested depth level of a node. The root node returns 1.
 
-=head2 deepest
+=head3 deepest
 
   my $deepest_depth = $dom->deepest;
 

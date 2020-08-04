@@ -14,8 +14,8 @@ use warnings;
 
 
 
-my $tests = 5; # keep on line 17 for ,i (increment and ,d (decrement)
-plan tests => 5;
+my $tests = 7; # keep on line 17 for ,i (increment and ,d (decrement)
+plan tests => $tests;
 diag( "Running my tests" );
 
 my $html = '<html><head></head><body><p class="first">A paragraph.</p><p class="last">boo<a>blah<span>kdj</span></a></p><h1>hi</h1></body></html>';
@@ -31,8 +31,13 @@ is $tag, 'body', 'gets correct container tag for paragraphs';
 my $tag1 = $ex->at('p.first');
 my $tag2 = $ex->at('p.last');
 
-my $result = $ex->compare_tags($tag1, $tag2);
+my $result = $ex->compare($tag1, $tag2);
 is $result, -1, 'can compare tags';
+
+$result = $tag1 cmp $tag2;
+is $result, -1, 'can compare tags';
+
+is $ex->at('p.first')->compare('p.last'), -1, 'can compare with method operator';
 
 my $depth = $ex->at('p.first')->depth;
 is $depth, 3, 'gets depth';
