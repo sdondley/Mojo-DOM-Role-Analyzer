@@ -103,7 +103,7 @@ Finds the deeepest nested level within a node.
 
 # VERSION
 
-version 0.007
+version 0.008
 
 # SUPPORT
 

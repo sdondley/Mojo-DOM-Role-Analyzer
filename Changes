@@ -1,6 +1,6 @@
-Revision history for {{$dist->name}}
+Revision history for Mojo-DOM-Role-Analyzer
 
-{{$NEXT}}
+0.008     2020-08-05 09:42:41-04:00 America/New_York
 
 - add min. Mojo::DOM version requirement
 
