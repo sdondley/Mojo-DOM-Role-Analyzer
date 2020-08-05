@@ -66,6 +66,16 @@ sub compare {
   }
 }
 
+sub distance {
+  my ($s, $sel1, $sel2) = _get_selectors(@_);
+
+  my $common = common($s, $s->root->at($sel1), $s->root->at($sel2));
+  my $dist_leg1 = $s->root->at($sel1)->depth - $common->depth;
+  my $dist_leg2 = $s->root->at($sel2)->depth - $common->depth;
+
+  return $dist_leg1 + $dist_leg2;
+}
+
 sub depth {
   my $s = shift;
   my $sel = $s->selector;
@@ -85,7 +95,12 @@ sub deepest {
 
 # find the common ancestor between two nodes
 sub common {
-  my ($s, $sel1, $sel2) = _get_selectors(@_);
+  my ($s, $sel1, $sel2);
+  if ($_[1] && $_[2] && !ref $_[1] && !ref $_[2]) {
+    ($s, $sel1, $sel2) = @_;
+  } else {
+    ($s, $sel1, $sel2) = _get_selectors(@_);
+  }
 
   my @t1_path = split / > /, $sel1;
   my @t2_path = split / > /, $sel2;
@@ -99,7 +114,6 @@ sub common {
       last;
     }
   }
-  use Log::Log4perl::Shortcuts qw(:all);
   my $common_selector = join ' > ', @last_common;
 
   return $s->root->at($common_selector);
@@ -244,4 +258,3 @@ Finds the nested depth level of a node. The root node returns 1.
   my $deepest_depth = $dom->deepest;
 
 Finds the deeepest nested level within a node.
-
