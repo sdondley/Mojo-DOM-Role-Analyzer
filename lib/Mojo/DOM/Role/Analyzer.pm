@@ -16,7 +16,7 @@ sub element_count {
 sub parent_all {
   my $self = shift;
   my $tag = shift || $self->tag;
-  carp 'Unable to determine tag' if !$tag;
+  carp 'Unable to determine tag' unless $tag;
   my $p_count = $self->root->find($tag)->size;
 
   my $enclosing_tag = $self->root->at($tag);
@@ -34,17 +34,23 @@ sub parent_ptags {
   return $self->parent_all('p');
 }
 
-# determine if a tag A comes before or after tag B in the dom
-sub compare {
-  my ($sel1, $sel2);
+sub _get_selectors {
+  my ($s, $sel1, $sel2);
   if (!$_[2]) {
-    my $s = shift;
+    $s = shift;
     $sel1 = $s->selector;
     $sel2 = $s->root->at($_[0])->selector;
   } else {
+    $s = $_[0];
     $sel1 = $_[1]->selector;
     $sel2 = $_[2]->selector;
   }
+  return ($s, $sel1, $sel2);
+}
+
+# determine if a tag A comes before or after tag B in the dom
+sub compare {
+  my ($s, $sel1, $sel2) = _get_selectors(@_);
 
   my @t1_path = split / > /, $sel1;
   my @t2_path = split / > /, $sel2;
@@ -75,6 +81,29 @@ sub deepest {
     $deepest_depth = $depth if $depth > $deepest_depth;
   }
   return $deepest_depth;
+}
+
+# find the common ancestor between two nodes
+sub common {
+  my ($s, $sel1, $sel2) = _get_selectors(@_);
+
+  my @t1_path = split / > /, $sel1;
+  my @t2_path = split / > /, $sel2;
+
+  my @last_common;
+  foreach my $p1 (@t1_path) {
+    my $p2 = shift(@t2_path);
+    if ($p1 eq $p2) {
+      push @last_common, $p1;
+    } else {
+      last;
+    }
+  }
+  use Log::Log4perl::Shortcuts qw(:all);
+  my $common_selector = join ' > ', @last_common;
+
+  return $s->root->at($common_selector);
+
 }
 
 
@@ -156,8 +185,33 @@ that wraps all the tags indicated in the argument.
 A conveniece method that works like the C<parent_all> method but automatically supplies a
 C<'p'> tag argument for you.
 
+=head3 common
 
-=head3 compare($dom1, $dom2)
+=head4 $dom->at($tag1)->common($tag2)
+
+=head4 common($dom1, $dom2)
+
+  my $common_dom = $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
+
+  # OR
+
+  my $dom1 = $dom->at('div.bar');
+  my $dom2 = $dom->at('div.foo');
+  my $common = $dom->compare($dom1, $dom2);
+
+Returns the common ancestor node for two tags.
+
+=head3 compare
+
+=head4 $dom->at($tag1)->compare($tag2)
+
+=head4 compare($dom1, $dom2)
+
+=head4 $dom1 cmp $dom2 # as an operator
+
+  $dom->at('p.first')->compare('p.last');    # 'p.last' is relative to root
+
+  # OR
 
   my $dom1 = $dom->at('p.first');
   my $dom2 = $dom->at('p.last');
@@ -167,9 +221,6 @@ C<'p'> tag argument for you.
 
   my $result = $dom1 cmp $dom2;
 
-  # OR
-
-  $dom->at('p.first')->compare('p.last');    # 'p.last' is relative to root
 
 Compares the selectors of two $dom objects to see which comes first in the DOM.
 
