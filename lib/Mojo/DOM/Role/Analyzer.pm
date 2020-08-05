@@ -149,7 +149,7 @@ Provides methods for analyzing a DOM.
 
 =head1 DESCRIPTION
 
-=head3 Operators
+=head2 Operators
 
 =head3 cmp
 
@@ -187,9 +187,9 @@ C<'p'> tag argument for you.
 
 =head3 common
 
-=head4 $dom->at($tag1)->common($tag2)
+=head4 C<$dom-E<gt>at($tag1)-E<gt>common($tag2)>
 
-=head4 common($dom1, $dom2)
+=head4 C<$dom-E<gt>common($dom1, $dom2)>
 
   my $common_dom = $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
 
@@ -203,11 +203,11 @@ Returns the common ancestor node for two tags.
 
 =head3 compare
 
-=head4 $dom->at($tag1)->compare($tag2)
+=head4 C<$dom-E<gt>at($tag1)-E<gt>compare($tag2)>
 
-=head4 compare($dom1, $dom2)
+=head4 C<compare($dom1, $dom2)>
 
-=head4 $dom1 cmp $dom2 # as an operator
+=head4 C<$dom1 cmp $dom2>
 
   $dom->at('p.first')->compare('p.last');    # 'p.last' is relative to root
 
@@ -221,19 +221,17 @@ Returns the common ancestor node for two tags.
 
   my $result = $dom1 cmp $dom2;
 
-
 Compares the selectors of two $dom objects to see which comes first in the DOM.
 
 =over 1
 
-=item Returns a value of '-1' if the first argument comes before (is less than) the second.
+=item * Returns a value of '-1' if the first argument comes before (is less than) the second.
 
-=item Returns a value of '0' if the first and second arguments are the same.
+=item * Returns a value of '0' if the first and second arguments are the same.
 
-=item Returns a value of '1' if the first argument comes after (is greater than) the second.
+=item * Returns a value of '1' if the first argument comes after (is greater than) the second.
 
 =back
-
 
 =head3 depth
 
@@ -247,5 +245,3 @@ Finds the nested depth level of a node. The root node returns 1.
 
 Finds the deeepest nested level within a node.
 
-
-=head1 DEPENDENCIES
