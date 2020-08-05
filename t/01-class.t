@@ -14,7 +14,7 @@ use warnings;
 
 
 
-my $tests = 9; # keep on line 17 for ,i (increment and ,d (decrement)
+my $tests = 11; # keep on line 17 for ,i (increment and ,d (decrement)
 plan tests => $tests;
 diag( "Running my tests" );
 
@@ -50,3 +50,9 @@ is $depth, 3, 'gets depth';
 
 my $deepest = $ex->deepest;
 is $deepest, 5, 'gets deepest depth';
+
+my $common = $ex->at('h1')->common('p');
+is $common->tag, 'body', 'gets common ancestor with method-like call';
+
+$common = $ex->common($tag1, $tag2);
+is $common->tag, 'body', 'gets common ancestor with function-like call';
