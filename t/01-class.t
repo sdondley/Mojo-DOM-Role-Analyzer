@@ -14,7 +14,7 @@ use warnings;
 
 
 
-my $tests = 8; # keep on line 17 for ,i (increment and ,d (decrement)
+my $tests = 9; # keep on line 17 for ,i (increment and ,d (decrement)
 plan tests => $tests;
 diag( "Running my tests" );
 
