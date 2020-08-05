@@ -1,4 +1,10 @@
-Revision history for Mojo-DOM-Role-Analyzer
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+- add common method for finding common ancestor
+- code improvements
+- various doc improvements
 
 0.008     2020-08-05 09:42:41-04:00 America/New_York
 
