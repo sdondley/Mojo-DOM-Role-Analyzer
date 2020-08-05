@@ -32,13 +32,16 @@ my $tag1 = $ex->at('p.first');
 my $tag2 = $ex->at('p.last');
 
 my $result = $ex->compare($tag1, $tag2);
-is $result, -1, 'can compare tags';
+is $result, -1, 'can compare tags with function-like method';
 
 $result = $tag1 cmp $tag2;
-is $result, -1, 'can compare tags';
+is $result, -1, 'can compare tags with operator';
 
 $result = $tag2 cmp $tag1;
-is $result, 1, 'can compare tags';
+is $result, 1, 'gets correct results when comparing tags';
+
+$result = $tag2 cmp $tag1;
+is $result, 1, 'gets correct results when comparing tags';
 
 is $ex->at('p.first')->compare('p.last'), -1, 'can compare with method operator';
 
@@ -47,5 +50,3 @@ is $depth, 3, 'gets depth';
 
 my $deepest = $ex->deepest;
 is $deepest, 5, 'gets deepest depth';
-
-
