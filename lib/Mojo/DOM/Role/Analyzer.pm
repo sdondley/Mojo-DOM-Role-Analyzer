@@ -15,7 +15,7 @@ sub element_count {
 
 sub parent_all {
   my $self = shift;
-  my $tag = shift || $self->tag;
+  my $tag = shift;
   carp 'Unable to determine tag' unless $tag;
   my $p_count = $self->root->find($tag)->size;
 
@@ -39,13 +39,77 @@ sub _get_selectors {
   if (!$_[2]) {
     $s = shift;
     $sel1 = $s->selector;
-    $sel2 = $s->root->at($_[0])->selector;
+    if (ref $_[0]) {
+      $sel2 = $_[0]->selector;
+    } else {
+      $sel2 = $s->root->at($_[0])->selector;
+    }
   } else {
     $s = $_[0];
     $sel1 = $_[1]->selector;
     $sel2 = $_[2]->selector;
   }
   return ($s, $sel1, $sel2);
+}
+
+# traverses the DOM upward to find the closest tag node
+sub closest_up {
+  return _closest(@_, 'up');
+}
+
+sub closest_down {
+  return _closest(@_, 'down');
+}
+
+sub _closest {
+  my $s = shift;
+  my $sel = $s->selector;
+  use Log::Log4perl::Shortcuts qw(:all);
+  my $tag = shift;
+  my $dir = shift || 'up';
+  if ($dir ne 'up') {
+    $dir = 'down';
+  }
+
+  my $found;
+  if ($dir eq 'up') {
+    $found = $s->root->find($tag)->grep(sub { ($s cmp $_) > 0  } );
+  } else {
+    $found = $s->root->find($tag)->grep(sub { ($s cmp $_) < 0  } );
+  }
+
+  return 0 unless $found->size;
+
+  my $shortest_dist;
+  my @shortest_selectors;
+  foreach my $f ($found->each) {
+    my $key = $f->selector;
+    my $dist = $s->root->at($sel)->distance($f);
+    if (!$shortest_dist) {
+      $shortest_dist = $dist;
+      push @shortest_selectors, $key;
+    } elsif ($dist <= $shortest_dist) {
+      if ($dist < $shortest_dist) {
+        @shortest_selectors = ();
+        push @shortest_selectors, $key;
+      } else {
+        $shortest_dist = $dist;
+        push @shortest_selectors, $key;
+      }
+    }
+  }
+
+  if (@shortest_selectors == 1) {
+    return $s->root->at($shortest_selectors[0]);
+  }
+
+  my @sorted = sort { $s->root->at($a) cmp $s->root->at($b) } @shortest_selectors;
+  if ($dir eq 'up') {
+    return $s->root->at($sorted[-1]);  # get furthers from the top (closest to node of interest)
+  } else {
+    return $s->root->at($sorted[0]);   # get futherst from the bottom (closest to node of interest)
+  }
+
 }
 
 # determine if a tag A comes before or after tag B in the dom
@@ -174,6 +238,33 @@ the dom. See C<compare> method below for return values.
 
 =head2 Methods
 
+=head3 closest_up
+
+  my $closest_up_dom = $dom->at('p')->closest_up('h1');
+
+Returns the node closest to the tag node of interest by searching upward through the DOM.
+
+=head4 closest_down
+
+  my $closest_down_dom = $dom->at('h1')->closest_down('p');
+
+Returns the node closest to the tag node of interest by searching downward through the DOM.
+
+=head3 closest_down
+
+=head3 distance
+
+=head4 C<$dom-E<gt>at($selector)-E<gt>distance($selector)>
+
+=head4 C<$dom-E<gt>at($selector)-E<gt>distance($dom)>
+
+=head4 C<$dom-E<gt>distance($dom1, $dom2)>
+
+Finds the distance between two nodes. The value is calculated by finding the
+lowest common ancestor node for the two nodes and then adding the distance from
+each individual node to the lowest common ancestor node.
+
+
 =head3 element_count
 
   $count = $dom->element_count;
@@ -205,15 +296,21 @@ C<'p'> tag argument for you.
 
 =head4 C<$dom-E<gt>common($dom1, $dom2)>
 
+=head4 C<$dom-E<gt>common($selector_str1, $selector_str2)>
+
   my $common_dom = $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
 
   # OR
 
   my $dom1 = $dom->at('div.bar');
   my $dom2 = $dom->at('div.foo');
-  my $common = $dom->compare($dom1, $dom2);
+  my $common = $dom->common($dom1, $dom2);
 
-Returns the common ancestor node for two tags.
+  # OR
+
+  my $common = $dom->common($dom->at('p')->selector, $dom->at('h1')->selector);
+
+Returns the lowest common ancestor node between two tag nodes or two selector strings.
 
 =head3 compare
 
