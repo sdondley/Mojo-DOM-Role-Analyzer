@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+- add methods for determining "closest" nodes and associated tests
+- add distance method for finding distance between nodes
 - add common method for finding common ancestor
 - code improvements
 - various doc improvements
