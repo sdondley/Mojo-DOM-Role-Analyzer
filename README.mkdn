@@ -35,7 +35,7 @@ Mojo::DOM::Role::Analyzer - miscellaneous methods for analyzing a DOM
 
 # DESCRIPTION
 
-### Operators
+## Operators
 
 ### cmp
 
@@ -45,6 +45,32 @@ Compares the selectors of two $dom objects to determine which comes first in
 the dom. See `compare` method below for return values.
 
 ## Methods
+
+### closest\_up
+
+    my $closest_up_dom = $dom->at('p')->closest_up('h1');
+
+Returns the node closest to the tag node of interest by searching upward through the DOM.
+
+#### closest\_down
+
+    my $closest_down_dom = $dom->at('h1')->closest_down('p');
+
+Returns the node closest to the tag node of interest by searching downward through the DOM.
+
+### closest\_down
+
+### distance
+
+#### `$dom->at($selector)->distance($selector)`
+
+#### `$dom->at($selector)->distance($dom)`
+
+#### `$dom->distance($dom1, $dom2)`
+
+Finds the distance between two nodes. The value is calculated by finding the
+lowest common ancestor node for the two nodes and then adding the distance from
+each individual node to the lowest common ancestor node.
 
 ### element\_count
 
@@ -69,7 +95,39 @@ that wraps all the tags indicated in the argument.
 A conveniece method that works like the `parent_all` method but automatically supplies a
 `'p'` tag argument for you.
 
-### compare($dom1, $dom2)
+### common
+
+#### `$dom->at($tag1)->common($tag2)`
+
+#### `$dom->common($dom1, $dom2)`
+
+#### `$dom->common($selector_str1, $selector_str2)`
+
+    my $common_dom = $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
+
+    # OR
+
+    my $dom1 = $dom->at('div.bar');
+    my $dom2 = $dom->at('div.foo');
+    my $common = $dom->common($dom1, $dom2);
+
+    # OR
+
+    my $common = $dom->common($dom->at('p')->selector, $dom->at('h1')->selector);
+
+Returns the lowest common ancestor node between two tag nodes or two selector strings.
+
+### compare
+
+#### `$dom->at($tag1)->compare($tag2)`
+
+#### `compare($dom1, $dom2)`
+
+#### `$dom1 cmp $dom2`
+
+    $dom->at('p.first')->compare('p.last');    # 'p.last' is relative to root
+
+    # OR
 
     my $dom1 = $dom->at('p.first');
     my $dom2 = $dom->at('p.last');
@@ -78,10 +136,6 @@ A conveniece method that works like the `parent_all` method but automatically su
     # OR with overloaded 'cmp' operator
 
     my $result = $dom1 cmp $dom2;
-
-    # OR
-
-    $dom->at('p.first')->compare('p.last');    # 'p.last' is relative to root
 
 Compares the selectors of two $dom objects to see which comes first in the DOM.
 
@@ -103,7 +157,7 @@ Finds the deeepest nested level within a node.
 
 # VERSION
 
-version 0.008
+version 0.009
 
 # SUPPORT
 
