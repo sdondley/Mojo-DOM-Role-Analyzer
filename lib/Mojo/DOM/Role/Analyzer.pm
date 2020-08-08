@@ -3,8 +3,8 @@ package Mojo::DOM::Role::Analyzer ;
 use strict;
 use warnings;
 use Role::Tiny;
-use Devel::Confess;
 use Carp;
+use Log::Log4perl::Shortcuts qw(:all);
 
 use overload "cmp" => sub { $_[0]->compare(@_) }, fallback => 1;
 
@@ -14,16 +14,17 @@ sub element_count {
 }
 
 sub parent_all {
-  my $self = shift;
-  my $tag = shift;
-  carp 'Unable to determine tag' unless $tag;
-  my $p_count = $self->root->find($tag)->size;
+  my $self    = shift;
+  my $tag     = shift;
+  carp 'No tag passed to parent_all method' unless $tag;
 
-  my $enclosing_tag = $self->root->at($tag);
-  my $current_p_count = 0;
-  while ($current_p_count < $p_count) {
+  my $t_count = $self->find($tag)->size;
+
+  my $enclosing_tag = $self->at($tag);
+  my $current_t_count = 0;
+  while ($current_t_count < $t_count) {
     my $parent = $enclosing_tag->parent;
-    $current_p_count = $parent->find('p')->size;
+    $current_t_count = $parent->find('p')->size;
     $enclosing_tag = $parent;
   }
   return $enclosing_tag;
@@ -64,7 +65,6 @@ sub closest_down {
 sub _closest {
   my $s = shift;
   my $sel = $s->selector;
-  use Log::Log4perl::Shortcuts qw(:all);
   my $tag = shift;
   my $dir = shift || 'up';
   if ($dir ne 'up') {
@@ -80,30 +80,16 @@ sub _closest {
 
   return 0 unless $found->size;
 
-  my $shortest_dist;
-  my @shortest_selectors;
+  my @selectors;
   foreach my $f ($found->each) {
-    my $key = $f->selector;
-    my $dist = $s->root->at($sel)->distance($f);
-    if (!$shortest_dist) {
-      $shortest_dist = $dist;
-      push @shortest_selectors, $key;
-    } elsif ($dist <= $shortest_dist) {
-      if ($dist < $shortest_dist) {
-        @shortest_selectors = ();
-        push @shortest_selectors, $key;
-      } else {
-        $shortest_dist = $dist;
-        push @shortest_selectors, $key;
-      }
-    }
+    push @selectors, $f->selector;
   }
 
-  if (@shortest_selectors == 1) {
-    return $s->root->at($shortest_selectors[0]);
+  if (@selectors == 1) {
+    return $s->root->at($selectors[0]);
   }
 
-  my @sorted = sort { $s->root->at($a) cmp $s->root->at($b) } @shortest_selectors;
+  my @sorted = sort { $s->root->at($a) cmp $s->root->at($b) } @selectors;
   if ($dir eq 'up') {
     return $s->root->at($sorted[-1]);  # get furthers from the top (closest to node of interest)
   } else {
@@ -184,6 +170,112 @@ sub common {
 
 }
 
+#sub _dump_dom {
+  #use Log::Log4perl::Shortcuts qw(:all);
+#  my $dom = shift;
+#  logd $dom->tag;
+#  logd $dom->attr();
+  #$}
+
+#sub _gsec {
+#  my $enclosing_tag = shift;
+#  my @sub_enclosing_nodes;
+#  my $node_counter = 0;
+#  my $largest = 0;
+#  my $largest_node = 0;
+#  foreach my $c ($enclosing_tag->children('*')->each) {
+#    my $size = $c->find('p')->size;
+#    if ($size > $largest) {
+#      $largest = $size;
+#      $largest_node = $node_counter;
+#    }
+#    my $same_depth = 1;
+#    my $depth_tracker = undef;
+#    my $depth_total;
+#    foreach my $p ($c->find('p')->each) {
+#      my $sel = $p->selector;
+#      my @parts = split /\s>\s/, $sel;
+#      my $parts = scalar @parts;
+#      if ($depth_tracker && $parts != $depth_tracker) {
+#        $same_depth = 0;
+#      }
+#      $depth_tracker = $parts;
+#      $depth_total += $parts;
+#    }
+#    push @sub_enclosing_nodes, { child => $c->selector, size => $size, avg_ptag_depth => ($depth_total / $size), all_ptags_have_same_depth => $same_depth };
+#  }
+#  return @sub_enclosing_nodes;
+#}
+#
+
+sub _gsec {
+  my $s            = shift;
+  my $selector     = shift;
+  my $largest      = 0;
+  my $node_counter = 0;
+  my $largest_node = 0;
+
+  my @sub_enclosing_nodes;
+  foreach my $c ($s->children->each) {
+    my $size = $c->find($selector)->size;
+    next unless $size;
+
+    my $depth_total;
+    my $same_depth    = 1;
+    my $depth_tracker = undef;
+
+    if ($size > $largest) {
+      $largest      = $size;
+      $largest_node = $node_counter;
+    }
+
+    foreach my $t ($c->find($selector)->each) {
+      my $depth = $t->depth;
+
+      if ($depth_tracker && $depth != $depth_tracker) {
+        $same_depth = 0;
+      }
+
+      $depth_tracker = $depth;
+      $depth_total  += $depth;
+    }
+    push @sub_enclosing_nodes, { selector                 => $c->selector,
+                                 size                     => $size,
+                                 avg_tag_depth            => ($depth_total / $size),
+                                 all_tags_have_same_depth => $same_depth };
+  }
+  return @sub_enclosing_nodes;
+}
+
+sub tag_analysis {
+  my $s        = shift;
+  my $selector = shift;
+
+  carp "A selector argument must be passed to the tag_analysis method"
+    unless $selector;
+
+  my @sub_enclosing_nodes = $s->_tag_analysis_helper('p');
+
+  foreach my $sn (@sub_enclosing_nodes) {
+    next if $sn->{all_tags_have_same_depth};
+    my $ec = $s->at($sn->{selector})->parent_all('p');
+    my @enclosing_nodes = $ec->_tag_analysis_helper('p');
+    push @sub_enclosing_nodes, @enclosing_nodes;
+  }
+  return @sub_enclosing_nodes;
+}
+
+sub _tag_analysis_helper {
+  my $s        = shift;
+  my $selector = shift;
+  my @sub_enclosing_nodes = shift;
+
+  carp "A selector argument must be passed to the tag_analysis method"
+    unless $selector;
+
+  return _gsec($s, $selector);
+}
+
 
 1; # Magic true value
 # ABSTRACT: miscellaneous methods for analyzing a DOM
@@ -198,12 +290,12 @@ Provides methods for analyzing a DOM.
 
   use strict;
   use warnings;
-  use Mojo::Dom;
+  use Mojo::DOM;
 
   my $html = '<html><head></head><body><p class="first">A paragraph.</p><p class="last">boo<a>blah<span>kdj</span></a></p><h1>hi</h1></body></html>';
   my $analyzer = Mojo::DOM->with_roles('+Analyzer')->new($html);
 
-  # return the count of elements inside a dom objec
+  # return the number of elements inside a dom object
   my $count = $analyzer->at('body')->element_count;
 
   # get the smallest containing dom object that contains all the paragraph tags
@@ -225,6 +317,8 @@ Provides methods for analyzing a DOM.
   # get the deepest depth of the documented
   my $deepest = $analyzer->deepest;
 
+  # SEE DESCRIPTION BELOW FOR MORE METHODS
+
 =head1 DESCRIPTION
 
 =head2 Operators
@@ -238,57 +332,36 @@ the dom. See C<compare> method below for return values.
 
 =head2 Methods
 
-=head3 closest_up
-
-  my $closest_up_dom = $dom->at('p')->closest_up('h1');
-
-Returns the node closest to the tag node of interest by searching upward through the DOM.
-
 =head4 closest_down
 
   my $closest_down_dom = $dom->at('h1')->closest_down('p');
 
-Returns the node closest to the tag node of interest by searching downward through the DOM.
+Returns the node closest to the tag node of interest by searching downward
+through the DOM.
 
-=head3 closest_down
+Note that "closest" is defined as the node highest in the DOM that is still
+below the tag node of interest (or, in the case of L<closeest_up> lowest in the
+DOM but still above the tag node of interest), not by the shortest distance
+(number of "hops") to the other node.
 
-=head3 distance
+For example, in the code below, the C<E<lt>h1<E<gt>> tag containing "Heading 1"
+is five hops away from the C<E<lt>p<E<gt>> tag, while the other
+C<E<lt>h1<E<gt>> tag is only two hops away. But despite being more hops away,
+the C<E<lt>h1<E<gt>> tag containing "Header 1" is considered to be closer.
 
-=head4 C<$dom-E<gt>at($selector)-E<gt>distance($selector)>
+    <p>Paragraph</p>
+    <div><div><div><div><h1>Heading 1</h1></div></div></div></div>
+    <h1>Heading 2</h2>
 
-=head4 C<$dom-E<gt>at($selector)-E<gt>distance($dom)>
+=head3 closest_up
 
-=head4 C<$dom-E<gt>distance($dom1, $dom2)>
+  my $closest_up_dom = $dom->at('p')->closest_up('h1');
 
-Finds the distance between two nodes. The value is calculated by finding the
-lowest common ancestor node for the two nodes and then adding the distance from
-each individual node to the lowest common ancestor node.
+Returns the node closest to the tag node of interest by searching upward
+through the DOM.
 
-
-=head3 element_count
-
-  $count = $dom->element_count;
-
-Returns the number of elements in a dom object, including children of children
-of children, etc.
-
-
-=head3 parent_all
-
-  $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
-  $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
-
-Returns the smallest containing $dom within the $dom the method is called on
-that wraps all the tags indicated in the argument.
-
-
-=head3 parent_ptags
-
-  $dom = $dom->parent_ptags;
-  $dom = $dom->at('div.article')->parent_ptags;
-
-A conveniece method that works like the C<parent_all> method but automatically supplies a
-C<'p'> tag argument for you.
+See the L<closest_down> method for the meaning of the "closest" node and how it
+is calculated.
 
 =head3 common
 
@@ -344,14 +417,78 @@ Compares the selectors of two $dom objects to see which comes first in the DOM.
 
 =back
 
+=head3 deepest
+
+  my $deepest_depth = $dom->deepest;
+
+Finds the deeepest nested level within a node.
+
 =head3 depth
 
   my $depth = $dom->at('p.first')->depth;
 
 Finds the nested depth level of a node. The root node returns 1.
 
-=head3 deepest
+=head3 distance
 
-  my $deepest_depth = $dom->deepest;
+=head4 C<$dom-E<gt>at($selector)-E<gt>distance($selector)>
 
-Finds the deeepest nested level within a node.
+=head4 C<$dom-E<gt>at($selector)-E<gt>distance($dom)>
+
+=head4 C<$dom-E<gt>distance($dom1, $dom2)>
+
+Returns the distance, aka number of "hops," between two nodes.
+
+The value is calculated by first finding the lowest common ancestor node for
+the two nodes and then getting the distance between the lowest common ancestor
+node and each of the two nodes. The two distances are then added togethr to
+determine the total distance between the two nodes.
+
+=head3 element_count
+
+  $count = $dom->element_count;
+
+Returns the number of elements in a dom object, including children of children
+of children, etc.
+
+
+=head3 parent_all
+
+  $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
+  $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
+
+Returns the smallest containing $dom within the $dom the method is called on
+that wraps all the tags nodes matching the selector given by the argument.
+
+Example:
+
+  $dom = Mojo::DOM->with_roles('+Analyzer')->new(
+    '<div class="one"><div class="two"><p>foo</p><p>bar</p></div></div>');
+
+  my $parent = $dom->parent->all('p');
+  # $parent now has a $dom with C<E<lt>div class="two"E<gt>> as its root
+
+
+=head3 parent_ptags
+
+  $dom = $dom->parent_ptags;
+  $dom = $dom->at('div.article')->parent_ptags;
+
+A conveniece method that works like the C<parent_all> method but automatically supplies a
+C<'p'> tag argument for you.
+
+=head3 tag_analysis
+
+  @enclosing_tags = $dom->tag_analysis('p');
+
+Searches through a DOM for tag nodes that enclose tags matching the given
+selector (see L<parent_all> method) and returns an array of hash references
+with the following information for each of the enclosing nodes:
+
+  {
+    "all_tags_have_same_depth" => 1,   # whether enclosed tags within the enclosing node have the same depth
+    "avg_tag_depth" => 8,              # average depth of the enclosed tags
+    "selector" => "body:nth-child(2)", # the selector for the enclosing tag
+    "size" => 1                        # total number of tags of interest that are descendants of the enclosing tag
+  }
+
