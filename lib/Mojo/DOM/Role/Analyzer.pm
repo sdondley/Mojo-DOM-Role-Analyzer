@@ -170,44 +170,6 @@ sub common {
 
 }
 
-#sub _dump_dom {
-  #use Log::Log4perl::Shortcuts qw(:all);
-#  my $dom = shift;
-#  logd $dom->tag;
-#  logd $dom->attr();
-  #$}
-
-#sub _gsec {
-#  my $enclosing_tag = shift;
-#  my @sub_enclosing_nodes;
-#  my $node_counter = 0;
-#  my $largest = 0;
-#  my $largest_node = 0;
-#  foreach my $c ($enclosing_tag->children('*')->each) {
-#    my $size = $c->find('p')->size;
-#    if ($size > $largest) {
-#      $largest = $size;
-#      $largest_node = $node_counter;
-#    }
-#    my $same_depth = 1;
-#    my $depth_tracker = undef;
-#    my $depth_total;
-#    foreach my $p ($c->find('p')->each) {
-#      my $sel = $p->selector;
-#      my @parts = split /\s>\s/, $sel;
-#      my $parts = scalar @parts;
-#      if ($depth_tracker && $parts != $depth_tracker) {
-#        $same_depth = 0;
-#      }
-#      $depth_tracker = $parts;
-#      $depth_total += $parts;
-#    }
-#    push @sub_enclosing_nodes, { child => $c->selector, size => $size, avg_ptag_depth => ($depth_total / $size), all_ptags_have_same_depth => $same_depth };
-#  }
-#  return @sub_enclosing_nodes;
-#}
-#
-
 sub _gsec {
   my $s            = shift;
   my $selector     = shift;
