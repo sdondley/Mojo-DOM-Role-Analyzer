@@ -6,12 +6,12 @@ Mojo::DOM::Role::Analyzer - miscellaneous methods for analyzing a DOM
 
     use strict;
     use warnings;
-    use Mojo::Dom;
+    use Mojo::DOM;
 
     my $html = '<html><head></head><body><p class="first">A paragraph.</p><p class="last">boo<a>blah<span>kdj</span></a></p><h1>hi</h1></body></html>';
     my $analyzer = Mojo::DOM->with_roles('+Analyzer')->new($html);
 
-    # return the count of elements inside a dom objec
+    # return the number of elements inside a dom object
     my $count = $analyzer->at('body')->element_count;
 
     # get the smallest containing dom object that contains all the paragraph tags
@@ -33,6 +33,8 @@ Mojo::DOM::Role::Analyzer - miscellaneous methods for analyzing a DOM
     # get the deepest depth of the documented
     my $deepest = $analyzer->deepest;
 
+    # SEE DESCRIPTION BELOW FOR MORE METHODS
+
 # DESCRIPTION
 
 ## Operators
@@ -46,54 +48,36 @@ the dom. See `compare` method below for return values.
 
 ## Methods
 
-### closest\_up
-
-    my $closest_up_dom = $dom->at('p')->closest_up('h1');
-
-Returns the node closest to the tag node of interest by searching upward through the DOM.
-
 #### closest\_down
 
     my $closest_down_dom = $dom->at('h1')->closest_down('p');
 
-Returns the node closest to the tag node of interest by searching downward through the DOM.
+Returns the node closest to the tag node of interest by searching downward
+through the DOM.
 
-### closest\_down
+Note that "closest" is defined as the node highest in the DOM that is still
+below the tag node of interest (or, in the case of [closeest\_up](https://metacpan.org/pod/closeest_up) lowest in the
+DOM but still above the tag node of interest), not by the shortest distance
+(number of "hops") to the other node.
 
-### distance
+For example, in the code below, the `<h1<>` tag containing "Heading 1"
+is five hops away from the `<p<>` tag, while the other
+`<h1<>` tag is only two hops away. But despite being more hops away,
+the `<h1<>` tag containing "Header 1" is considered to be closer.
 
-#### `$dom->at($selector)->distance($selector)`
+    <p>Paragraph</p>
+    <div><div><div><div><h1>Heading 1</h1></div></div></div></div>
+    <h1>Heading 2</h2>
 
-#### `$dom->at($selector)->distance($dom)`
+### closest\_up
 
-#### `$dom->distance($dom1, $dom2)`
+    my $closest_up_dom = $dom->at('p')->closest_up('h1');
 
-Finds the distance between two nodes. The value is calculated by finding the
-lowest common ancestor node for the two nodes and then adding the distance from
-each individual node to the lowest common ancestor node.
+Returns the node closest to the tag node of interest by searching upward
+through the DOM.
 
-### element\_count
-
-    $count = $dom->element_count;
-
-Returns the number of elements in a dom object, including children of children
-of children, etc.
-
-### parent\_all
-
-    $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
-    $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
-
-Returns the smallest containing $dom within the $dom the method is called on
-that wraps all the tags indicated in the argument.
-
-### parent\_ptags
-
-    $dom = $dom->parent_ptags;
-    $dom = $dom->at('div.article')->parent_ptags;
-
-A conveniece method that works like the `parent_all` method but automatically supplies a
-`'p'` tag argument for you.
+See the [closest\_down](https://metacpan.org/pod/closest_down) method for the meaning of the "closest" node and how it
+is calculated.
 
 ### common
 
@@ -143,21 +127,82 @@ Compares the selectors of two $dom objects to see which comes first in the DOM.
 - Returns a value of '0' if the first and second arguments are the same.
 - Returns a value of '1' if the first argument comes after (is greater than) the second.
 
-### depth
-
-    my $depth = $dom->at('p.first')->depth;
-
-Finds the nested depth level of a node. The root node returns 1.
-
 ### deepest
 
     my $deepest_depth = $dom->deepest;
 
 Finds the deeepest nested level within a node.
 
+### depth
+
+    my $depth = $dom->at('p.first')->depth;
+
+Finds the nested depth level of a node. The root node returns 1.
+
+### distance
+
+#### `$dom->at($selector)->distance($selector)`
+
+#### `$dom->at($selector)->distance($dom)`
+
+#### `$dom->distance($dom1, $dom2)`
+
+Returns the distance, aka number of "hops," between two nodes.
+
+The value is calculated by first finding the lowest common ancestor node for
+the two nodes and then getting the distance between the lowest common ancestor
+node and each of the two nodes. The two distances are then added togethr to
+determine the total distance between the two nodes.
+
+### element\_count
+
+    $count = $dom->element_count;
+
+Returns the number of elements in a dom object, including children of children
+of children, etc.
+
+### parent\_all
+
+    $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
+    $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
+
+Returns the smallest containing $dom within the $dom the method is called on
+that wraps all the tags nodes matching the selector given by the argument.
+
+Example:
+
+    $dom = Mojo::DOM->with_roles('+Analyzer')->new(
+      '<div class="one"><div class="two"><p>foo</p><p>bar</p></div></div>');
+
+    my $parent = $dom->parent->all('p');
+    # $parent now has a $dom with C<E<lt>div class="two"E<gt>> as its root
+
+### parent\_ptags
+
+    $dom = $dom->parent_ptags;
+    $dom = $dom->at('div.article')->parent_ptags;
+
+A conveniece method that works like the `parent_all` method but automatically supplies a
+`'p'` tag argument for you.
+
+### tag\_analysis
+
+    @enclosing_tags = $dom->tag_analysis('p');
+
+Searches through a DOM for tag nodes that enclose tags matching the given
+selector (see [parent\_all](https://metacpan.org/pod/parent_all) method) and returns an array of hash references
+with the following information for each of the enclosing nodes:
+
+    {
+      "all_tags_have_same_depth" => 1,   # whether enclosed tags within the enclosing node have the same depth
+      "avg_tag_depth" => 8,              # average depth of the enclosed tags
+      "selector" => "body:nth-child(2)", # the selector for the enclosing tag
+      "size" => 1                        # total number of tags of interest that are descendants of the enclosing tag
+    }
+
 # VERSION
 
-version 0.009
+version 0.010
 
 # SUPPORT
 
