@@ -332,7 +332,7 @@ the dom. See C<compare> method below for return values.
 
 =head2 Methods
 
-=head4 closest_down
+=head3 closest_down
 
   my $closest_down_dom = $dom->at('h1')->closest_down('p');
 
@@ -344,10 +344,10 @@ below the tag node of interest (or, in the case of L<closeest_up> lowest in the
 DOM but still above the tag node of interest), not by the shortest distance
 (number of "hops") to the other node.
 
-For example, in the code below, the C<E<lt>h1<E<gt>> tag containing "Heading 1"
-is five hops away from the C<E<lt>p<E<gt>> tag, while the other
-C<E<lt>h1<E<gt>> tag is only two hops away. But despite being more hops away,
-the C<E<lt>h1<E<gt>> tag containing "Header 1" is considered to be closer.
+For example, in the code below, the C<E<lt>h1E<gt>> tag containing "Heading 1"
+is five hops away from the C<E<lt>pE<gt>> tag, while the other
+C<E<lt>h1E<gt>> tag is only two hops away. But despite being more hops away,
+the C<E<lt>h1E<gt>> tag containing "Header 1" is considered to be closer.
 
     <p>Paragraph</p>
     <div><div><div><div><h1>Heading 1</h1></div></div></div></div>
@@ -466,7 +466,7 @@ Example:
     '<div class="one"><div class="two"><p>foo</p><p>bar</p></div></div>');
 
   my $parent = $dom->parent->all('p');
-  # $parent now has a $dom with C<E<lt>div class="two"E<gt>> as its root
+  # $parent now has a $dom with <div class="two"> as its root
 
 
 =head3 parent_ptags
@@ -474,7 +474,7 @@ Example:
   $dom = $dom->parent_ptags;
   $dom = $dom->at('div.article')->parent_ptags;
 
-A conveniece method that works like the C<parent_all> method but automatically supplies a
+A conveniece method that works like the L<parent_all> method but automatically supplies a
 C<'p'> tag argument for you.
 
 =head3 tag_analysis
@@ -491,4 +491,3 @@ with the following information for each of the enclosing nodes:
     "selector" => "body:nth-child(2)", # the selector for the enclosing tag
     "size" => 1                        # total number of tags of interest that are descendants of the enclosing tag
   }
-
