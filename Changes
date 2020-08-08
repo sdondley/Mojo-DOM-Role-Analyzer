@@ -1,4 +1,10 @@
-Revision history for Mojo-DOM-Role-Analyzer
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+- add tag_analysis method along with documentation and test for it
+- improved documentation
+- changed how closer methods determine which tag is closer
 
 0.009     2020-08-05 22:46:39-04:00 America/New_York
 
