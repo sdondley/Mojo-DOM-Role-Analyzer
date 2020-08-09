@@ -135,13 +135,6 @@ sub deepest {
   return $deepest_depth;
 }
 
-sub common_parent_within {
-  my $s = shift;
-  my $sel = $s->selector;
-  $s = $s->root->at($_[0]);
-  $s->common($sel);
-}
-
 # find the common ancestor between a node and another node or group of nodes
 sub common {
 # uncomment to debug
