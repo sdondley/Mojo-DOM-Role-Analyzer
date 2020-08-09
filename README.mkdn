@@ -111,9 +111,10 @@ is calculated.
     my $common = $dom->at('p.foo')->common;
 
 Returns the lowest common ancestor node between two nodes or
-betwween a node and a group of nodes sharing the same selector.
+between a node and a group of nodes sharing the same selector.
 
-See ["common" in Mojo::Collection::Role::Extra](https://metacpan.org/pod/Mojo::Collection::Role::Extra#common) for a similar method that is on Mojo::Collections.
+See ["common" in Mojo::Collection::Role::Extra](https://metacpan.org/pod/Mojo::Collection::Role::Extra#common) for a similar method that invoked
+on Mojo::Collection objects.
 
 ### compare
 
@@ -198,7 +199,7 @@ with the following information for each of the enclosing nodes:
 
 # VERSION
 
-version 0.011
+version 0.012
 
 # SUPPORT
 
