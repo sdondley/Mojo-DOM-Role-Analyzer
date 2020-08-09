@@ -146,7 +146,7 @@ sub common {
    # The argument handling is a bit confusing. Keep these important notes in mind while reading this code:
 
    # 1) This method is called on Mojo::DOM objects (obviously)
-   # 2) Don't confuse this mthod with its sister method also named "common"
+   # 2) Don't confuse this method with its sister method also named "common"
    #    in Mojo::DOM::Collection::Extra which works with Mojo::Collection objects
    # 3) The argument handling below works for the different types of common syntaxes noted
    #    below in the comments.
