@@ -1,5 +1,13 @@
 Revision history for Mojo-DOM-Role-Analyzer
 
+0.011     2020-08-09 09:42:11-04:00 America/New_York
+
+- documentation updates
+- refactor and improve methods related to finding common nodes
+- add new Mojo::Collection::Role for containing new methods on collections
+- thanks to mst for helping with ideas for improvement
+- add new is_ancestor_to method
+
 0.010     2020-08-08 09:38:06-04:00 America/New_York
 
 - add tag_analysis method along with documentation and test for it

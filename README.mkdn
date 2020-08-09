@@ -15,7 +15,7 @@ Mojo::DOM::Role::Analyzer - miscellaneous methods for analyzing a DOM
     my $count = $analyzer->at('body')->element_count;
 
     # get the smallest containing dom object that contains all the paragraph tags
-    my $containing_dom = $analyzer->parent_ptags;
+    my $containing_dom = $analyzer->common_ancestor('p');
 
     # compare DOM objects to see which comes first in the document
     my $tag1 = $analyzer->at('p.first');
@@ -48,7 +48,7 @@ the dom. See `compare` method below for return values.
 
 ## Methods
 
-#### closest\_down
+### closest\_down
 
     my $closest_down_dom = $dom->at('h1')->closest_down('p');
 
@@ -60,10 +60,10 @@ below the tag node of interest (or, in the case of [closeest\_up](https://metacp
 DOM but still above the tag node of interest), not by the shortest distance
 (number of "hops") to the other node.
 
-For example, in the code below, the `<h1<>` tag containing "Heading 1"
-is five hops away from the `<p<>` tag, while the other
-`<h1<>` tag is only two hops away. But despite being more hops away,
-the `<h1<>` tag containing "Header 1" is considered to be closer.
+For example, in the code below, the `<h1>` tag containing "Heading 1"
+is five hops away from the `<p>` tag, while the other
+`<h1>` tag is only two hops away. But despite being more hops away,
+the `<h1>` tag containing "Header 1" is considered to be closer.
 
     <p>Paragraph</p>
     <div><div><div><div><h1>Heading 1</h1></div></div></div></div>
@@ -87,19 +87,33 @@ is calculated.
 
 #### `$dom->common($selector_str1, $selector_str2)`
 
-    my $common_dom = $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
+#### `$dom->at($tag1)->common`
+
+    # Find the common ancestor for two nodes
+    my $common $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
 
     # OR
 
+    # Pass in two $dom objects
     my $dom1 = $dom->at('div.bar');
     my $dom2 = $dom->at('div.foo');
     my $common = $dom->common($dom1, $dom2);
 
     # OR
 
+    # Pass in two selectors
     my $common = $dom->common($dom->at('p')->selector, $dom->at('h1')->selector);
 
-Returns the lowest common ancestor node between two tag nodes or two selector strings.
+    # OR
+
+    # Find the common ancestor for all paragraph nodes with class "foo"
+    # This syntax is a wrapper for the Mojo::Collection::Role::Extra->common method
+    my $common = $dom->at('p.foo')->common;
+
+Returns the lowest common ancestor node between two nodes or
+betwween a node and a group of nodes sharing the same selector.
+
+See ["common" in Mojo::Collection::Role::Extra](https://metacpan.org/pod/Mojo::Collection::Role::Extra#common) for a similar method that is on Mojo::Collections.
 
 ### compare
 
@@ -161,36 +175,18 @@ determine the total distance between the two nodes.
 Returns the number of elements in a dom object, including children of children
 of children, etc.
 
-### parent\_all
+### is\_ancestor\_to
 
-    $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
-    $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
+    $is_ancestor = $s->('h1')->is_ancestor_to('p.foo');
 
-Returns the smallest containing $dom within the $dom the method is called on
-that wraps all the tags nodes matching the selector given by the argument.
-
-Example:
-
-    $dom = Mojo::DOM->with_roles('+Analyzer')->new(
-      '<div class="one"><div class="two"><p>foo</p><p>bar</p></div></div>');
-
-    my $parent = $dom->parent->all('p');
-    # $parent now has a $dom with C<E<lt>div class="two"E<gt>> as its root
-
-### parent\_ptags
-
-    $dom = $dom->parent_ptags;
-    $dom = $dom->at('div.article')->parent_ptags;
-
-A conveniece method that works like the `parent_all` method but automatically supplies a
-`'p'` tag argument for you.
+Returns true if a node is an ancestor to another node, false otherwise.
 
 ### tag\_analysis
 
     @enclosing_tags = $dom->tag_analysis('p');
 
 Searches through a DOM for tag nodes that enclose tags matching the given
-selector (see [parent\_all](https://metacpan.org/pod/parent_all) method) and returns an array of hash references
+selector (see [common\_ancestor](https://metacpan.org/pod/common_ancestor) method) and returns an array of hash references
 with the following information for each of the enclosing nodes:
 
     {
@@ -202,7 +198,7 @@ with the following information for each of the enclosing nodes:
 
 # VERSION
 
-version 0.010
+version 0.011
 
 # SUPPORT
 
@@ -232,6 +228,11 @@ from your repository :)
 [https://github.com/sdondley/Mojo-DOM-Role-Analyzer](https://github.com/sdondley/Mojo-DOM-Role-Analyzer)
 
     git clone git://github.com/sdondley/Mojo-DOM-Role-Analyzer.git
+
+# SEE ALSO
+
+[Mojo::DOM](https://metacpan.org/pod/Mojo::DOM)
+[Mojo::Collection::Role::Extra](https://metacpan.org/pod/Mojo::Collection::Role::Extra)
 
 # AUTHOR
 
