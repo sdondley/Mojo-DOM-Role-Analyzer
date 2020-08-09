@@ -385,7 +385,8 @@ is calculated.
 Returns the lowest common ancestor node between two nodes or
 betwween a node and a group of nodes sharing the same selector.
 
-See L<Mojo::Collection::Role::Extra/common> for a similar method that is on Mojo::Collections.
+See L<Mojo::Collection::Role::Extra/common> for a similar method that invoked
+on Mojo::Collection objects.
 
 =head3 compare
 
