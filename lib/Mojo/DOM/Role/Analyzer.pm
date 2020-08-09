@@ -4,35 +4,20 @@ use strict;
 use warnings;
 use Role::Tiny;
 use Carp;
-use Log::Log4perl::Shortcuts qw(:all);
+use Mojo::Collection::Role::Extra;
+
+
+around find => sub {
+  my $orig = shift;
+  my $self = shift;
+  return $self->$orig(@_)->with_roles('+Extra');
+};
 
 use overload "cmp" => sub { $_[0]->compare(@_) }, fallback => 1;
 
 sub element_count {
   my $self = shift;
   return $self->descendant_nodes->grep(sub { $_->type eq 'tag' })->size;
-}
-
-sub parent_all {
-  my $self    = shift;
-  my $tag     = shift;
-  carp 'No tag passed to parent_all method' unless $tag;
-
-  my $t_count = $self->find($tag)->size;
-
-  my $enclosing_tag = $self->at($tag);
-  my $current_t_count = 0;
-  while ($current_t_count < $t_count) {
-    my $parent = $enclosing_tag->parent;
-    $current_t_count = $parent->find('p')->size;
-    $enclosing_tag = $parent;
-  }
-  return $enclosing_tag;
-}
-
-sub parent_ptags {
-  my $self = shift;
-  return $self->parent_all('p');
 }
 
 sub _get_selectors {
@@ -51,6 +36,15 @@ sub _get_selectors {
     $sel2 = $_[2]->selector;
   }
   return ($s, $sel1, $sel2);
+}
+
+sub is_ancestor_to {
+  my $s = shift;
+  my $arg = shift;
+  my $sel1 = $s->selector;
+  my $sel2 = $arg->selector;
+
+  return $sel2 =~ /^\Q$sel1\E/ ? 1 : 0;
 }
 
 # traverses the DOM upward to find the closest tag node
@@ -91,9 +85,9 @@ sub _closest {
 
   my @sorted = sort { $s->root->at($a) cmp $s->root->at($b) } @selectors;
   if ($dir eq 'up') {
-    return $s->root->at($sorted[-1]);  # get furthers from the top (closest to node of interest)
+    return $s->root->at($sorted[-1]);  # get furtherest from the top (closest to node of interest)
   } else {
-    return $s->root->at($sorted[0]);   # get futherst from the bottom (closest to node of interest)
+    return $s->root->at($sorted[0]);   # get futherest from the bottom (closest to node of interest)
   }
 
 }
@@ -119,7 +113,7 @@ sub compare {
 sub distance {
   my ($s, $sel1, $sel2) = _get_selectors(@_);
 
-  my $common = common($s, $s->root->at($sel1), $s->root->at($sel2));
+  my $common = $s->common($s->root->at($sel1), $s->root->at($sel2));
   my $dist_leg1 = $s->root->at($sel1)->depth - $common->depth;
   my $dist_leg2 = $s->root->at($sel2)->depth - $common->depth;
 
@@ -143,28 +137,59 @@ sub deepest {
   return $deepest_depth;
 }
 
-# find the common ancestor between two nodes
+sub common_parent_within {
+  my $s = shift;
+  my $sel = $s->selector;
+  $s = $s->root->at($_[0]);
+  $s->common($sel);
+}
+
+# find the common ancestor between a node and another node or group of nodes
 sub common {
+# uncomment to debug
+# use Log::Log4perl::Shortcuts qw(:all); # for development only
+#  if (ref $_[0]) { logd ref $_[0]; } else { logd $_[0]; }
+#  if (ref $_[1]) { logd ref $_[1]; } else { logd $_[1]; }
+#  if (ref $_[2]) { logd ref $_[2]; } else { logd $_[2]; }
+
+   # The argument handling is a bit confusing. Keep these important notes in mind while reading this code:
+
+   # 1) This method is called on Mojo::DOM objects (obviously)
+   # 2) Don't confuse this mthod with its sister method also named "common"
+   #    in Mojo::DOM::Collection::Extra which works with Mojo::Collection objects
+   # 3) The argument handling below works for the different types of common syntaxes noted
+   #    below in the comments.
+
   my ($s, $sel1, $sel2);
-  if ($_[1] && $_[2] && !ref $_[1] && !ref $_[2]) {
-    ($s, $sel1, $sel2) = @_;
+
+  # function-like use of common: $dom->commont($dom1, $dom2)
+  if (ref $_[1] && ref $_[2]) {
+    $s = $_[0];
+    $sel1 = $_[1]->selector;
+    $sel2 = $_[2]->selector;
+  # DWIM syntax handling
   } else {
-    ($s, $sel1, $sel2) = _get_selectors(@_);
+    if (!$_[1] && !$_[2]) {                         # $dom->at('div');
+      my $s = shift;
+      return $s->root->find($s->selector)->common;
+    } elsif ($_[1] && !ref $_[1] && !$_[2]) {       # $dom->at('div.first')->common('p');
+      $s = shift;
+      $sel1 = $s->selector;
+      $sel2 = $s->root->at(shift)->selector;
+    }
   }
 
   my @t1_path = split / > /, $sel1;
   my @t2_path = split / > /, $sel2;
 
-  my @last_common;
-  foreach my $p1 (@t1_path) {
-    my $p2 = shift(@t2_path);
-    if ($p1 eq $p2) {
-      push @last_common, $p1;
-    } else {
-      last;
-    }
+  my @common_path;
+  foreach my $seg (@t1_path) {
+    my $seg2 = shift @t2_path;
+    last if !$seg2 || $seg ne $seg2;
+    push @common_path, $seg2;
   }
-  my $common_selector = join ' > ', @last_common;
+
+  my $common_selector = join ' > ', @common_path;
 
   return $s->root->at($common_selector);
 
@@ -216,14 +241,20 @@ sub tag_analysis {
   carp "A selector argument must be passed to the tag_analysis method"
     unless $selector;
 
-  my @sub_enclosing_nodes = $s->_tag_analysis_helper('p');
+  my @sub_enclosing_nodes = $s->_tag_analysis_helper($selector);
 
   foreach my $sn (@sub_enclosing_nodes) {
     next if $sn->{all_tags_have_same_depth};
-    my $ec = $s->at($sn->{selector})->parent_all('p');
-    my @enclosing_nodes = $ec->_tag_analysis_helper('p');
+    my $ec = $s->at($sn->{selector})->common($selector);
+    my @enclosing_nodes = $ec->_tag_analysis_helper($selector);
     push @sub_enclosing_nodes, @enclosing_nodes;
   }
+
+  # cleanup any unnecessary nodes at top of the array that wrap the smallest econpassing dom
+  my $total_tags = $s->find($selector)->size;
+  my $number_of_tags = grep { $_->{size} == $total_tags } @sub_enclosing_nodes;
+  splice @sub_enclosing_nodes, 0, $number_of_tags - 1;
+
   return @sub_enclosing_nodes;
 }
 
@@ -261,7 +292,7 @@ Provides methods for analyzing a DOM.
   my $count = $analyzer->at('body')->element_count;
 
   # get the smallest containing dom object that contains all the paragraph tags
-  my $containing_dom = $analyzer->parent_ptags;
+  my $containing_dom = $analyzer->common_ancestor('p');
 
   # compare DOM objects to see which comes first in the document
   my $tag1 = $analyzer->at('p.first');
@@ -414,10 +445,10 @@ Returns the number of elements in a dom object, including children of children
 of children, etc.
 
 
-=head3 parent_all
+=head3 common_ancestor
 
-  $dom = $dom->parent_all('a');                     # finds parent within root that contains all 'a' tags
-  $dom = $dom->at('div.article')->parent_all('ul'); # finds parent within C<div.article> that has all 'ul' tags
+  $dom = $dom->common_ancestor('a');                     # finds parent within root that contains all 'a' tags
+  $dom = $dom->at('div.article')->common_ancestor('ul'); # finds parent within C<div.article> that has all 'ul' tags
 
 Returns the smallest containing $dom within the $dom the method is called on
 that wraps all the tags nodes matching the selector given by the argument.
@@ -436,7 +467,7 @@ Example:
   $dom = $dom->parent_ptags;
   $dom = $dom->at('div.article')->parent_ptags;
 
-A conveniece method that works like the L<parent_all> method but automatically supplies a
+A conveniece method that works like the L<common_ancestor> method but automatically supplies a
 C<'p'> tag argument for you.
 
 =head3 tag_analysis
@@ -444,7 +475,7 @@ C<'p'> tag argument for you.
   @enclosing_tags = $dom->tag_analysis('p');
 
 Searches through a DOM for tag nodes that enclose tags matching the given
-selector (see L<parent_all> method) and returns an array of hash references
+selector (see L<common_ancestor> method) and returns an array of hash references
 with the following information for each of the enclosing nodes:
 
   {
