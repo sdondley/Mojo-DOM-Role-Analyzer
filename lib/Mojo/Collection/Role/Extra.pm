@@ -2,8 +2,6 @@ package Mojo::Collection::Role::Extra ;
 
 use Role::Tiny;
 
-#use Log::Log4perl::Shortcuts qw(:all);
-
 sub common {
   my $c = shift;
   my $size = $c->size;
@@ -21,62 +19,26 @@ sub common {
 }
 
 1; # Magic true value
-# ABSTRACT: this is what the module does
+# ABSTRACT: provides methods for use with Mojo::DOM::Role::Analyzer
 
 
 __END__
 
 =head1 OVERVIEW
 
-Provide overview of who the intended audience is for the module and why it's useful.
-
-=head1 SYNOPSIS
-
-  use {{$name}};
+A role for extending Mojo::Collection with methods for use with L<Mojo::DOM::Role::Analyzer>
 
 =head1 DESCRIPTION
 
-=method method1()
+=head2 METHODS
 
+=head3 common
 
+  $dom->find('p')->common;
+  $dom->at('div.foo')->find('p');
 
-=method method2()
+Returns the lowest common ancestor for all nodes in a collection.
 
+=head1 SEE ALSO
 
-
-=func function1()
-
-
-
-=func function2()
-
-
-
-=attr attribute1
-
-
-
-=attr attribute2
-
-
-
-#=head1 CONFIGURATION AND ENVIRONMENT
-#
-#{{$name}} requires no configuration files or environment variables.
-
-
-=head1 DEPENDENCIES
-
-=head1 AUTHOR NOTES
-
-=head2 Development status
-
-This module is currently in the beta stages and is actively supported and maintained. Suggestion for improvement are welcome.
-
-- Note possible future roadmap items.
-
-=head2 Motivation
-
-Provide motivation for writing the module here.
-
-#=head1 SEE ALSO
+L<Mojo::DOM::Role::Analyzer>
