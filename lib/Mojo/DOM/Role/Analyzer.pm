@@ -5,51 +5,21 @@ use warnings;
 use Role::Tiny;
 use Carp;
 
+use overload "cmp" => sub { $_[0]->compare(@_) }, fallback => 1;
+
+# wrap the find method so we can call the common method on collections
 around find => sub {
   my $orig = shift;
   my $self = shift;
   return $self->$orig(@_)->with_roles('+Extra');
 };
 
-use overload "cmp" => sub { $_[0]->compare(@_) }, fallback => 1;
-
-sub element_count {
-  my $self = shift;
-  return $self->descendant_nodes->grep(sub { $_->type eq 'tag' })->size;
-}
-
-sub _get_selectors {
-  my ($s, $sel1, $sel2);
-  if (!$_[2]) {
-    $s = shift;
-    $sel1 = $s->selector;
-    if (ref $_[0]) {
-      $sel2 = $_[0]->selector;
-    } else {
-      $sel2 = $s->root->at($_[0])->selector;
-    }
-  } else {
-    $s = $_[0];
-    $sel1 = $_[1]->selector;
-    $sel2 = $_[2]->selector;
-  }
-  return ($s, $sel1, $sel2);
-}
-
-sub is_ancestor_to {
-  my $s = shift;
-  my $arg = shift;
-  my $sel1 = $s->selector;
-  my $sel2 = $arg->selector;
-
-  return $sel2 =~ /^\Q$sel1\E/ ? 1 : 0;
-}
-
 # traverses the DOM upward to find the closest tag node
 sub closest_up {
   return _closest(@_, 'up');
 }
 
+# traverses the DOM downward to find the closest tag node
 sub closest_down {
   return _closest(@_, 'down');
 }
@@ -88,51 +58,6 @@ sub _closest {
     return $s->root->at($sorted[0]);   # get futherest from the bottom (closest to node of interest)
   }
 
-}
-
-# determine if a tag A comes before or after tag B in the dom
-sub compare {
-  my ($s, $sel1, $sel2) = _get_selectors(@_);
-
-  my @t1_path = split / > /, $sel1;
-  my @t2_path = split / > /, $sel2;
-
-  foreach my $p1 (@t1_path) {
-    my $p2 = shift(@t2_path);
-    next if $p1 eq $p2;
-    my ($p1_tag, $p1_num) = split /:/, $p1;
-    my ($p2_tag, $p2_num) = split /:/, $p2;
-
-    next if $p1_num eq $p2_num;
-    return $p1_num cmp $p2_num;
-  }
-}
-
-sub distance {
-  my ($s, $sel1, $sel2) = _get_selectors(@_);
-
-  my $common = $s->common($s->root->at($sel1), $s->root->at($sel2));
-  my $dist_leg1 = $s->root->at($sel1)->depth - $common->depth;
-  my $dist_leg2 = $s->root->at($sel2)->depth - $common->depth;
-
-  return $dist_leg1 + $dist_leg2;
-}
-
-sub depth {
-  my $s = shift;
-  my $sel = $s->selector;
-  my @parts = split /\s>\s/, $sel;
-  return scalar @parts;
-}
-
-sub deepest {
-  my $s = shift;
-  my $deepest_depth = 0;
-  foreach my $c ($s->descendant_nodes->grep(sub { $_->type eq 'tag' })->each) {
-    my $depth = $c->depth;
-    $deepest_depth = $depth if $depth > $deepest_depth;
-  }
-  return $deepest_depth;
 }
 
 # find the common ancestor between a node and another node or group of nodes
@@ -186,6 +111,119 @@ sub common {
 
 }
 
+# determine if a tag A comes before or after tag B in the dom
+sub compare {
+  my ($s, $sel1, $sel2) = _get_selectors(@_);
+
+  my @t1_path = split / > /, $sel1;
+  my @t2_path = split / > /, $sel2;
+
+  foreach my $p1 (@t1_path) {
+    my $p2 = shift(@t2_path);
+    next if $p1 eq $p2;
+    my ($p1_tag, $p1_num) = split /:/, $p1;
+    my ($p2_tag, $p2_num) = split /:/, $p2;
+
+    next if $p1_num eq $p2_num;
+    return $p1_num cmp $p2_num;
+  }
+}
+
+sub distance {
+  my ($s, $sel1, $sel2) = _get_selectors(@_);
+
+  my $common = $s->common($s->root->at($sel1), $s->root->at($sel2));
+  my $dist_leg1 = $s->root->at($sel1)->depth - $common->depth;
+  my $dist_leg2 = $s->root->at($sel2)->depth - $common->depth;
+
+  return $dist_leg1 + $dist_leg2;
+}
+
+sub depth {
+  my $s = shift;
+  my $sel = $s->selector;
+  my @parts = split /\s>\s/, $sel;
+  return scalar @parts;
+}
+
+sub deepest {
+  my $s = shift;
+  my $deepest_depth = 0;
+  foreach my $c ($s->descendant_nodes->grep(sub { $_->type eq 'tag' })->each) {
+    my $depth = $c->depth;
+    $deepest_depth = $depth if $depth > $deepest_depth;
+  }
+  return $deepest_depth;
+}
+
+sub element_count {
+  my $self = shift;
+  return $self->descendant_nodes->grep(sub { $_->type eq 'tag' })->size;
+}
+
+# determine if one node is an ancestor to another
+sub is_ancestor_to {
+  my $s = shift;
+  my $arg = shift;
+  my $sel1 = $s->selector;
+  my $sel2 = $arg->selector;
+
+  return $sel2 =~ /^\Q$sel1\E/ ? 1 : 0;
+}
+
+sub tag_analysis {
+  my $s        = shift;
+  my $selector = shift;
+
+  carp "A selector argument must be passed to the tag_analysis method"
+    unless $selector;
+
+  my @sub_enclosing_nodes = $s->_tag_analysis_helper($selector);
+
+  foreach my $sn (@sub_enclosing_nodes) {
+    next if $sn->{all_tags_have_same_depth};
+    my $ec = $s->at($sn->{selector})->common($selector);
+    my @enclosing_nodes = $ec->_tag_analysis_helper($selector);
+    push @sub_enclosing_nodes, @enclosing_nodes;
+  }
+
+  # cleanup any unnecessary nodes at top of the array wrapping the smallest enconpassing dom
+  my $total_tags = $s->find($selector)->size;
+  my $number_of_tags = grep { $_->{size} == $total_tags } @sub_enclosing_nodes;
+  splice @sub_enclosing_nodes, 0, $number_of_tags - 1;
+
+  return @sub_enclosing_nodes;
+}
+
+sub _tag_analysis_helper {
+  my $s        = shift;
+  my $selector = shift;
+  my @sub_enclosing_nodes = shift;
+
+  carp "A selector argument must be passed to the tag_analysis method"
+    unless $selector;
+
+  return _gsec($s, $selector);
+}
+
+sub _get_selectors {
+  my ($s, $sel1, $sel2);
+  if (!$_[2]) {
+    $s = shift;
+    $sel1 = $s->selector;
+    if (ref $_[0]) {
+      $sel2 = $_[0]->selector;
+    } else {
+      $sel2 = $s->root->at($_[0])->selector;
+    }
+  } else {
+    $s = $_[0];
+    $sel1 = $_[1]->selector;
+    $sel2 = $_[2]->selector;
+  }
+  return ($s, $sel1, $sel2);
+}
+
 # get secondary enclosing tags
 sub _gsec {
   my $s            = shift;
@@ -224,41 +262,6 @@ sub _gsec {
                                  all_tags_have_same_depth => $same_depth };
   }
   return @sub_enclosing_nodes;
-}
-
-sub tag_analysis {
-  my $s        = shift;
-  my $selector = shift;
-
-  carp "A selector argument must be passed to the tag_analysis method"
-    unless $selector;
-
-  my @sub_enclosing_nodes = $s->_tag_analysis_helper($selector);
-
-  foreach my $sn (@sub_enclosing_nodes) {
-    next if $sn->{all_tags_have_same_depth};
-    my $ec = $s->at($sn->{selector})->common($selector);
-    my @enclosing_nodes = $ec->_tag_analysis_helper($selector);
-    push @sub_enclosing_nodes, @enclosing_nodes;
-  }
-
-  # cleanup any unnecessary nodes at top of the array wrapping the smallest enconpassing dom
-  my $total_tags = $s->find($selector)->size;
-  my $number_of_tags = grep { $_->{size} == $total_tags } @sub_enclosing_nodes;
-  splice @sub_enclosing_nodes, 0, $number_of_tags - 1;
-
-  return @sub_enclosing_nodes;
-}
-
-sub _tag_analysis_helper {
-  my $s        = shift;
-  my $selector = shift;
-  my @sub_enclosing_nodes = shift;
-
-  carp "A selector argument must be passed to the tag_analysis method"
-    unless $selector;
-
-  return _gsec($s, $selector);
 }
 
 
