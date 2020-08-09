@@ -4,8 +4,6 @@ use strict;
 use warnings;
 use Role::Tiny;
 use Carp;
-use Mojo::Collection::Role::Extra;
-
 
 around find => sub {
   my $orig = shift;
@@ -195,6 +193,7 @@ sub common {
 
 }
 
+# get secondary enclosing tags
 sub _gsec {
   my $s            = shift;
   my $selector     = shift;
@@ -250,7 +249,7 @@ sub tag_analysis {
     push @sub_enclosing_nodes, @enclosing_nodes;
   }
 
-  # cleanup any unnecessary nodes at top of the array that wrap the smallest econpassing dom
+  # cleanup any unnecessary nodes at top of the array wrapping the smallest enconpassing dom
   my $total_tags = $s->find($selector)->size;
   my $number_of_tags = grep { $_->{size} == $total_tags } @sub_enclosing_nodes;
   splice @sub_enclosing_nodes, 0, $number_of_tags - 1;
@@ -364,19 +363,33 @@ is calculated.
 
 =head4 C<$dom-E<gt>common($selector_str1, $selector_str2)>
 
-  my $common_dom = $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
+=head4 C<$dom-E<gt>at($tag1)-E<gt>common>
+
+  # Find the common ancestor for two nodes
+  my $common $dom->at('div.bar')->common('div.foo');    # 'div.foo' is relative to root
 
   # OR
 
+  # Pass in two $dom objects
   my $dom1 = $dom->at('div.bar');
   my $dom2 = $dom->at('div.foo');
   my $common = $dom->common($dom1, $dom2);
 
   # OR
 
+  # Pass in two selectors
   my $common = $dom->common($dom->at('p')->selector, $dom->at('h1')->selector);
 
-Returns the lowest common ancestor node between two tag nodes or two selector strings.
+  # OR
+
+  # Find the common ancestor for all paragraph nodes with class "foo"
+  # This syntax is a wrapper for the Mojo::Collection::Role::Extra->common method
+  my $common = $dom->at('p.foo')->common;
+
+Returns the lowest common ancestor node between two nodes or
+betwween a node and a group of nodes sharing the same selector.
+
+See L<Mojo::Collection::Role::Extra/common> for a similar method that is on Mojo::Collections.
 
 =head3 compare
 
@@ -444,31 +457,11 @@ determine the total distance between the two nodes.
 Returns the number of elements in a dom object, including children of children
 of children, etc.
 
+=head3 is_ancestor_to
 
-=head3 common_ancestor
+  $is_ancestor = $s->('h1')->is_ancestor_to('p.foo');
 
-  $dom = $dom->common_ancestor('a');                     # finds parent within root that contains all 'a' tags
-  $dom = $dom->at('div.article')->common_ancestor('ul'); # finds parent within C<div.article> that has all 'ul' tags
-
-Returns the smallest containing $dom within the $dom the method is called on
-that wraps all the tags nodes matching the selector given by the argument.
-
-Example:
-
-  $dom = Mojo::DOM->with_roles('+Analyzer')->new(
-    '<div class="one"><div class="two"><p>foo</p><p>bar</p></div></div>');
-
-  my $parent = $dom->parent->all('p');
-  # $parent now has a $dom with <div class="two"> as its root
-
-
-=head3 parent_ptags
-
-  $dom = $dom->parent_ptags;
-  $dom = $dom->at('div.article')->parent_ptags;
-
-A conveniece method that works like the L<common_ancestor> method but automatically supplies a
-C<'p'> tag argument for you.
+Returns true if a node is an ancestor to another node, false otherwise.
 
 =head3 tag_analysis
 
@@ -484,3 +477,8 @@ with the following information for each of the enclosing nodes:
     "selector" => "body:nth-child(2)", # the selector for the enclosing tag
     "size" => 1                        # total number of tags of interest that are descendants of the enclosing tag
   }
+
+=head1 SEE ALSO
+
+L<Mojo::DOM>
+L<Mojo::Collection::Role::Extra>
