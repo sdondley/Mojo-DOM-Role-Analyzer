@@ -171,41 +171,6 @@ sub is_ancestor_to {
   return $sel2 =~ /^\Q$sel1\E/ ? 1 : 0;
 }
 
-sub tag_analysis {
-  my $s        = shift;
-  my $selector = shift;
-
-  carp "A selector argument must be passed to the tag_analysis method"
-    unless $selector;
-
-  my @sub_enclosing_nodes = $s->_tag_analysis_helper($selector);
-
-  foreach my $sn (@sub_enclosing_nodes) {
-    next if $sn->{all_tags_have_same_depth};
-    my $ec = $s->at($sn->{selector})->common($selector);
-    my @enclosing_nodes = $ec->_tag_analysis_helper($selector);
-    push @sub_enclosing_nodes, @enclosing_nodes;
-  }
-
-  # cleanup any unnecessary nodes at top of the array wrapping the smallest enconpassing dom
-  my $total_tags = $s->find($selector)->size;
-  my $number_of_tags = grep { $_->{size} == $total_tags } @sub_enclosing_nodes;
-  splice @sub_enclosing_nodes, 0, $number_of_tags - 1;
-
-  return @sub_enclosing_nodes;
-}
-
-sub _tag_analysis_helper {
-  my $s        = shift;
-  my $selector = shift;
-  my @sub_enclosing_nodes = shift;
-
-  carp "A selector argument must be passed to the tag_analysis method"
-    unless $selector;
-
-  return _gsec($s, $selector);
-}
-
 sub _get_selectors {
   my ($s, $sel1, $sel2);
   if (!$_[2]) {
@@ -224,16 +189,47 @@ sub _get_selectors {
   return ($s, $sel1, $sel2);
 }
 
-# get secondary enclosing tags
-sub _gsec {
-  my $s            = shift;
-  my $selector     = shift;
-  my $largest      = 0;
-  my $node_counter = 0;
-  my $largest_node = 0;
+sub tag_analysis {
+  my $s        = shift;
+  my $selector = shift;
+
+  carp "A selector argument must be passed to the tag_analysis method"
+    unless $selector;
+
+  my $common = $s->find($selector)->common;
 
   my @sub_enclosing_nodes;
-  foreach my $c ($s->children->each) {
+  @sub_enclosing_nodes = $common->_gsec($selector, $common->selector);
+
+  foreach my $sn (@sub_enclosing_nodes) {
+    next if $sn->{all_tags_have_same_depth};
+    my $n = $s->at($sn->{selector});
+    my $ec = $n->find($selector)->common;
+    my @enclosing_nodes = $ec->_gsec($selector);
+    push @sub_enclosing_nodes, @enclosing_nodes;
+  }
+
+  # cleanup any unnecessary nodes at top of the array wrapping the smallest enconpassing dom
+#  my $total_tags = $s->find($selector)->size;
+#  my $number_of_tags = grep { $_->{size} == $total_tags } @sub_enclosing_nodes;
+#  splice @sub_enclosing_nodes, 0, $number_of_tags - 1;
+  @sub_enclosing_nodes = sort { $a->{selector} cmp $b->{selector} } @sub_enclosing_nodes;
+
+  return @sub_enclosing_nodes;
+}
+
+
+# get secondary enclosing tags
+sub _gsec {
+  my $s                     = shift;
+  my $selector              = shift;
+  my $top_level_selector    = shift;
+
+  carp "A selector argument must be passed to the tag_analysis method"
+    unless $selector;
+
+  my @sub_enclosing_nodes;
+  foreach my $c ($top_level_selector ? $s->root->find($top_level_selector)->each : $s->children->each) {
     my $size = $c->find($selector)->size;
     next unless $size;
 
@@ -241,15 +237,10 @@ sub _gsec {
     my $same_depth    = 1;
     my $depth_tracker = undef;
 
-    if ($size > $largest) {
-      $largest      = $size;
-      $largest_node = $node_counter;
-    }
-
     foreach my $t ($c->find($selector)->each) {
       my $depth = $t->depth;
 
-      if ($depth_tracker && $depth != $depth_tracker) {
+      if ($depth_tracker && ($depth != $depth_tracker)) {
         $same_depth = 0;
       }
 
@@ -263,7 +254,6 @@ sub _gsec {
   }
   return @sub_enclosing_nodes;
 }
-
 
 1; # Magic true value
 # ABSTRACT: miscellaneous methods for analyzing a DOM
