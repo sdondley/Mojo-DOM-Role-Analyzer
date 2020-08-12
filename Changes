@@ -1,5 +1,10 @@
 Revision history for Mojo-DOM-Role-Analyzer
 
+0.013     2020-08-11 23:21:32-04:00 America/New_York
+
+- fix infinite loop in tag_analysis method
+- improve and tighten tag_analysis code
+
 0.012     2020-08-09 19:36:44-04:00 America/New_York
 
 - remove another unneeded functions
