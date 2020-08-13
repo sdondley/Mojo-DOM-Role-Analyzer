@@ -68,16 +68,21 @@ my $result =
         [
   {
     'all_tags_have_same_depth' => 0,
+    'top_level' => 1,
+    'direct_children' => 2,
     'avg_tag_depth' => '3.66666666666667',
     'selector' => 'html:nth-child(1) > body:nth-child(2)',
     'size' => 3
   },
   {
     'all_tags_have_same_depth' => 1,
+    'direct_children' => 0,
     'avg_tag_depth' => '5',
     'selector' => 'html:nth-child(1) > body:nth-child(2) > div:nth-child(2)',
     'size' => 1
   }
 ];
+use Log::Log4perl::Shortcuts qw(:all);
+logd \@analysis;
 
-is_deeply (\@analysis, $result, 'gets c orrect tag analysis result');
+is_deeply (\@analysis, $result, 'gets correct tag analysis result');
