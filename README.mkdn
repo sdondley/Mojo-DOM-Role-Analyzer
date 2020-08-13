@@ -178,7 +178,7 @@ of children, etc.
 
 ### is\_ancestor\_to
 
-    $is_ancestor = $s->('h1')->is_ancestor_to('p.foo');
+    $is_ancestor = $s->at('h1')->is_ancestor_to('p.foo');
 
 Returns true if a node is an ancestor to another node, false otherwise.
 
@@ -199,7 +199,7 @@ with the following information for each of the enclosing nodes:
 
 # VERSION
 
-version 0.013
+version 0.014
 
 # SUPPORT
 
