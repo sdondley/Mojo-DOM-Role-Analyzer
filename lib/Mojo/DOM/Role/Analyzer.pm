@@ -118,15 +118,25 @@ sub compare {
   my @t1_path = split / > /, $sel1;
   my @t2_path = split / > /, $sel2;
 
-  foreach my $p1 (@t1_path) {
-    my $p2 = shift(@t2_path);
-    next if $p1 eq $p2;
-    my ($p1_tag, $p1_num) = split /:/, $p1;
-    my ($p2_tag, $p2_num) = split /:/, $p2;
+  my $t1_len = scalar @t1_path;
+  my $t2_len = scalar @t2_path;
 
-    next if $p1_num eq $p2_num;
-    return $p1_num cmp $p2_num;
+  my $equal = 0;
+  foreach my $p1 (@t1_path) {
+    $equal = 0;
+    my $p2 = shift(@t2_path);
+    last if !$p2;
+    if ($p1 eq $p2) {
+      $equal = 1;
+      next;
+    }
+    my ($p1_num) = $p1 =~ /child\((\d+)\)/;
+    my ($p2_num) = $p2 =~ /child\((\d+)\)/;
+
+    return ($p1_num <=> $p2_num);
   }
+  return 0 if $t1_len == $t2_len;
+  return $t1_len < $t2_len ? -1 : 1;
 }
 
 sub distance {
@@ -196,63 +206,96 @@ sub tag_analysis {
   carp "A selector argument must be passed to the tag_analysis method"
     unless $selector;
 
-  my $common = $s->find($selector)->common;
-
-  my @sub_enclosing_nodes;
-  @sub_enclosing_nodes = $common->_gsec($selector, $common->selector);
+  my $ec = $s->find($selector)->common;
+  my @sub_enclosing_nodes = $ec->_gsec($selector, 1);
 
   foreach my $sn (@sub_enclosing_nodes) {
-    next if $sn->{all_tags_have_same_depth};
+    next if $sn->{all_tags_have_same_depth} || $sn->{top_level};
     my $n = $s->at($sn->{selector});
-    my $ec = $n->find($selector)->common;
-    my @enclosing_nodes = $ec->_gsec($selector);
+    my @enclosing_nodes = $n->_gsec($selector);
     push @sub_enclosing_nodes, @enclosing_nodes;
   }
 
-  # cleanup any unnecessary nodes at top of the array wrapping the smallest enconpassing dom
-#  my $total_tags = $s->find($selector)->size;
-#  my $number_of_tags = grep { $_->{size} == $total_tags } @sub_enclosing_nodes;
-#  splice @sub_enclosing_nodes, 0, $number_of_tags - 1;
   @sub_enclosing_nodes = sort { $a->{selector} cmp $b->{selector} } @sub_enclosing_nodes;
 
   return @sub_enclosing_nodes;
-}
 
+}
 
 # get secondary enclosing tags
 sub _gsec {
-  my $s                     = shift;
-  my $selector              = shift;
-  my $top_level_selector    = shift;
-
-  carp "A selector argument must be passed to the tag_analysis method"
-    unless $selector;
+  my $s = shift;
+  my $selector = shift;
+  my $top_level = shift;
+  my %props;
 
   my @sub_enclosing_nodes;
-  foreach my $c ($top_level_selector ? $s->root->find($top_level_selector)->each : $s->children->each) {
+
+  if ($top_level) {
+    $props{top_level} = 1;
+    $props{selector} = $s->selector;
+    $props{size} = $s->find($selector)->size;
+    my ($depth_total, $same_depth, $classes) = $s->_calc_depth($selector);
+
+    $props{classes} = $classes;
+    $props{direct_children} = $s->children($selector)->size;;
+    $props{avg_tag_depth} = ($depth_total / $props{size});
+    $props{all_tags_have_same_depth} = $same_depth;
+    push @sub_enclosing_nodes, \%props;
+  }
+
+
+  foreach my $c ($s->children->each) {
+    next if $c->tag eq $selector;
     my $size = $c->find($selector)->size;
     next unless $size;
 
-    my $depth_total;
-    my $same_depth    = 1;
-    my $depth_tracker = undef;
+    my $cdn_with_sel = $c->children($selector)->size;
 
-    foreach my $t ($c->find($selector)->each) {
-      my $depth = $t->depth;
+    my ($depth_total, $same_depth, $classes) = $c->_calc_depth($selector);
 
-      if ($depth_tracker && ($depth != $depth_tracker)) {
-        $same_depth = 0;
-      }
-
-      $depth_tracker = $depth;
-      $depth_total  += $depth;
-    }
-    push @sub_enclosing_nodes, { selector                 => $c->selector,
-                                 size                     => $size,
-                                 avg_tag_depth            => ($depth_total / $size),
-                                 all_tags_have_same_depth => $same_depth };
+    push @sub_enclosing_nodes,  { selector => $c->selector,
+                                  size => $size,
+                                  classes => $classes,
+                                  avg_tag_depth => ($depth_total / $size),
+                                  all_tags_have_same_depth => $same_depth,
+                                  direct_children => $cdn_with_sel,
+                                };
   }
+
   return @sub_enclosing_nodes;
+
+}
+
+sub _calc_depth {
+  my $s = shift;
+  my $selector = shift;
+  my $depth_total;
+  my $same_depth    = 1;
+  my $depth_tracker = undef;
+
+  my %classes;
+  foreach my $t ($s->find($selector)->each) {
+    if ($t->attr('class')) {
+      my @classes = split ' ', $t->attr('class');
+      $classes{$t->attr('class')}++;
+
+#      my @classes = split ' ', $t->attr('class');
+#      foreach my $cl (@classes) {
+#        $classes{$cl}++;
+#      }
+    }
+    my $depth = $t->depth;
+
+    if ($depth_tracker && ($depth != $depth_tracker)) {
+      $same_depth = 0;
+    }
+
+    $depth_tracker = $depth;
+    $depth_total  += $depth;
+  }
+
+  return ($depth_total, $same_depth, \%classes);
 }
 
 1; # Magic true value
@@ -446,7 +489,7 @@ of children, etc.
 
 =head3 is_ancestor_to
 
-  $is_ancestor = $s->('h1')->is_ancestor_to('p.foo');
+  $is_ancestor = $s->at('h1')->is_ancestor_to('p.foo');
 
 Returns true if a node is an ancestor to another node, false otherwise.
 
