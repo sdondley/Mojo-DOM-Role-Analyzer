@@ -69,6 +69,11 @@ my $result =
   {
     'all_tags_have_same_depth' => 0,
     'top_level' => 1,
+    'classes' => {
+                   'first' => 1,
+                   'last' => 1,
+                   'top' => 1
+                 },
     'direct_children' => 2,
     'avg_tag_depth' => '3.66666666666667',
     'selector' => 'html:nth-child(1) > body:nth-child(2)',
@@ -77,6 +82,9 @@ my $result =
   {
     'all_tags_have_same_depth' => 1,
     'direct_children' => 0,
+    'classes' => {
+                   'top' => 1
+                 },
     'avg_tag_depth' => '5',
     'selector' => 'html:nth-child(1) > body:nth-child(2) > div:nth-child(2)',
     'size' => 1
