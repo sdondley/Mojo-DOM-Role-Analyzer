@@ -1,4 +1,11 @@
-Revision history for Mojo-DOM-Role-Analyzer
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+- add module preqrequisite
+- fix bug in compare method
+- improve how secondary enclosing tags are calucated
+- return more useful data from tag_analysis method
 
 0.013     2020-08-11 23:21:32-04:00 America/New_York
 
