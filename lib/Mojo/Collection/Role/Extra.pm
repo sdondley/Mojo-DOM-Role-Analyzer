@@ -15,7 +15,6 @@ sub common {
   } while ($size > $enclosed->size);
 
   return $parent_node;
-
 }
 
 1; # Magic true value
