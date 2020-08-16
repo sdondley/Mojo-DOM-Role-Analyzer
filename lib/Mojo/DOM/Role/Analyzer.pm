@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Role::Tiny;
 use Carp;
-use Log::Log4perl::Shortcuts qw(:all);
+#use Log::Log4perl::Shortcuts qw(:all);
 
 
 use overload "cmp" => sub { $_[0]->compare(@_) }, fallback => 1;
