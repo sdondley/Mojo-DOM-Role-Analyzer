@@ -1,4 +1,10 @@
-Revision history for Mojo-DOM-Role-Analyzer
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+- add Travis-CI config file
+- improve tag analsis output
+- fix testing bug
 
 0.014     2020-08-13 17:08:04-04:00 America/New_York
 
