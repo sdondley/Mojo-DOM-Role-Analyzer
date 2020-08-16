@@ -90,7 +90,5 @@ my $result =
     'size' => 1
   }
 ];
-use Log::Log4perl::Shortcuts qw(:all);
-logd \@analysis;
 
 is_deeply (\@analysis, $result, 'gets correct tag analysis result');
