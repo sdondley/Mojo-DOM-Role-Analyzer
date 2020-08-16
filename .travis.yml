@@ -1,0 +1,13 @@
+dist: xenial
+language: perl
+perl:
+  - "5.30"
+  - "5.28"
+install:
+  - "dzil authordeps --missing | cpanm"
+  - "dzil listdeps --missing | cpanm"
+  - "cpanm Pod::Weaver::Section::Support"
+  - "cpanm Pod::Elemental::Transformer::List"
+  - "cpanm Mojo::DOM"
+script:
+  - dzil test
