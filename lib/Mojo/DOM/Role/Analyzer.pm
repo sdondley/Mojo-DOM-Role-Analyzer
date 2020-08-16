@@ -260,7 +260,9 @@ sub _gsec {
 
     $props{classes} = $classes;
     $props{direct_children} = $s->children($selector)->size;;
-    $props{avg_tag_depth} = ($depth_total / $props{size});
+    my $avg_depth = sprintf('%.3f', ($depth_total / $props{size}));
+    $avg_depth =~ s/\.0+$//g;
+    $props{avg_tag_depth} = $avg_depth;
     $props{all_tags_have_same_depth} = $same_depth;
     push @sub_enclosing_nodes, \%props;
   }
@@ -273,10 +275,12 @@ sub _gsec {
     my $cdn_with_sel = $c->children($selector)->size;
     my ($depth_total, $same_depth, $classes) = $c->_calc_depth($selector);
 
+    my $avg_depth = sprintf('%.3f', ($depth_total / $size));
+    $avg_depth =~ s/\.0+$//g;
     push @sub_enclosing_nodes,  { selector => $c->selector,
                                   size => $size,
                                   classes => $classes,
-                                  avg_tag_depth => ($depth_total / $size),
+                                  avg_tag_depth => $avg_depth,
                                   all_tags_have_same_depth => $same_depth,
                                   direct_children => $cdn_with_sel,
                                 };

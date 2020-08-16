@@ -75,7 +75,7 @@ my $result =
                    'top' => 1
                  },
     'direct_children' => 2,
-    'avg_tag_depth' => '3.66666666666667',
+    'avg_tag_depth' => '3.667',
     'selector' => 'html:nth-child(1) > body:nth-child(2)',
     'size' => 3
   },
