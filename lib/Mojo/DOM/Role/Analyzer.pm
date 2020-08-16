@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use Role::Tiny;
 use Carp;
+use Log::Log4perl::Shortcuts qw(:all);
+
 
 use overload "cmp" => sub { $_[0]->compare(@_) }, fallback => 1;
 
@@ -216,9 +218,28 @@ sub tag_analysis {
     push @sub_enclosing_nodes, @enclosing_nodes;
   }
 
+  # cleanup
   @sub_enclosing_nodes = sort { $a->{selector} cmp $b->{selector} } @sub_enclosing_nodes;
+  my $last_node;
+  my @filtered_enclosing_nodes;
+  foreach my $sen (@sub_enclosing_nodes) {
+    if (!$last_node) {
+      $last_node = $sen;
+      next;
+    }
 
-  return @sub_enclosing_nodes;
+    if ($s->at($last_node->{selector})->is_ancestor_to($s->at($sen->{selector}))) {
+      if ($last_node->{size} != $sen->{size} || $last_node->{direct_children} != $sen->{direct_children}) {
+        push @filtered_enclosing_nodes, $last_node;
+      }
+    } else {
+      push @filtered_enclosing_nodes, $last_node;
+    }
+    $last_node = $sen;
+  }
+  push @filtered_enclosing_nodes, $last_node;
+
+  return @filtered_enclosing_nodes;
 
 }
 
@@ -244,14 +265,12 @@ sub _gsec {
     push @sub_enclosing_nodes, \%props;
   }
 
-
   foreach my $c ($s->children->each) {
     next if $c->tag eq $selector;
     my $size = $c->find($selector)->size;
     next unless $size;
 
     my $cdn_with_sel = $c->children($selector)->size;
-
     my ($depth_total, $same_depth, $classes) = $c->_calc_depth($selector);
 
     push @sub_enclosing_nodes,  { selector => $c->selector,
